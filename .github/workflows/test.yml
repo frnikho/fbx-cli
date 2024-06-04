@@ -1,15 +1,17 @@
 name: "Test, format and check"
 on:
+  push:
+    branches:
+      - initial
   pull_request:
     branches:
       - develop
       - main
-      - initial
 jobs:
   test:
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       - uses: "actions-rs/toolchain@v1"
         with:
           toolchain: "stable"
@@ -20,7 +22,7 @@ jobs:
     name: "Cargo format"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       - uses: "actions-rs/toolchain@v1"
         with:
           profile: "minimal"
@@ -34,7 +36,7 @@ jobs:
     name: "Cargo clippy"
     runs-on: "ubuntu-latest"
     steps:
-      - uses: "actions/checkout@v3"
+      - uses: "actions/checkout@v4"
       - uses: "actions-rs/toolchain@v1"
         with:
           profile: "minimal"
