@@ -1,0 +1,6 @@
+.github
+.gitignore
+target
+pkg
+PKGBUILD
+README.md

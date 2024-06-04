@@ -1,0 +1,45 @@
+name: "Test, format and check"
+on:
+  pull_request:
+    branches:
+      - develop
+      - main
+      - initial
+jobs:
+  test:
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions-rs/toolchain@v1"
+        with:
+          toolchain: "stable"
+      - uses: "actions-rs/cargo@v1"
+        with:
+          command: "test"
+  fmt:
+    name: "Cargo format"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions-rs/toolchain@v1"
+        with:
+          profile: "minimal"
+          toolchain: "stable"
+          components: "rustfmt"
+      - uses: "actions-rs/cargo@v1"
+        with:
+          command: "fmt"
+          args: "--all -- --check"
+  clippy:
+    name: "Cargo clippy"
+    runs-on: "ubuntu-latest"
+    steps:
+      - uses: "actions/checkout@v3"
+      - uses: "actions-rs/toolchain@v1"
+        with:
+          profile: "minimal"
+          toolchain: "stable"
+          components: "clippy"
+      - uses: "actions-rs/cargo@v1"
+        with:
+          command: "clippy"

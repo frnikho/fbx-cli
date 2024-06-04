@@ -1,0 +1,16 @@
+pub mod air_media;
+pub mod authorization;
+pub mod connection;
+pub mod dhcp;
+pub mod ftp;
+pub mod lan;
+pub mod language;
+pub mod lcd;
+pub mod notification;
+pub mod parent_filter;
+pub mod port_forwarding;
+pub mod rrd;
+pub mod system;
+pub mod version;
+pub mod vm;
+pub mod wifi;

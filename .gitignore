@@ -1,0 +1,7 @@
+/target
+**/*.env
+free-cli-*
+free-cli-debug-*
+PKGBUILD
+pkg
+.idea
