@@ -1,5 +1,6 @@
 use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
+use crate::models::freebox::lan::LanHost;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DHCPError {
@@ -44,7 +45,7 @@ pub struct DHCPStaticLease {
     pub comment: String,
     pub hostname: String,
     pub ip: String,
-    //TODO: pub host: LanHost,
+    pub host: Option<LanHost>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -56,7 +57,7 @@ pub struct DHCPDynamicLease {
     pub assign_time: i32,
     pub refresh_time: i32,
     pub is_static: bool,
-    //TODO: pub host: LanHost
+    pub host: Option<LanHost>
 }
 
 pub type ListDHCPStaticLeasesResponse = ResponseResult<Vec<DHCPStaticLease>>;

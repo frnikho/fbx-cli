@@ -34,9 +34,9 @@ pub trait HttpClient {
 
 #[derive(Debug, Clone)]
 pub struct ReqwestClient {
-    client: reqwest::Client,
-    base_url: String,
-    timeout: u64,
+    pub client: reqwest::Client,
+    pub base_url: String,
+    pub timeout: u64,
 }
 
 impl Default for ReqwestClient {
@@ -93,17 +93,18 @@ impl ReqwestClient {
 impl HttpClient for ReqwestClient {
     type Error = ApiError;
 
-    async fn post<T: DeserializeOwned>(
-        &self,
-        url: &str,
-        body: Option<impl Serialize>,
-        headers: Option<HashMap<String, String>>,
-    ) -> Result<T, Self::Error> {
-        let mut builder = self.client.post(self.fmt_url(url)).json(&body);
+    async fn post<T: DeserializeOwned>(&self, url: &str, body: Option<impl Serialize>, headers: Option<HashMap<String, String>>) -> Result<T, Self::Error> {
+        let mut builder = self.client.post(self.fmt_url(url));
+        if let Some(body) = body {
+            builder = builder.json(&body);
+        }
         if let Some(headers) = headers {
             builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, v));
         }
-        Ok(builder.send().await?.json::<T>().await?)
+        let response = builder.send().await?;
+        let txt = response.text().await?;
+        //println!("{:?}", txt.clone());
+        Ok(serde_json::from_str(txt.as_str()).unwrap())
     }
 
     async fn get<T: DeserializeOwned>(
@@ -118,7 +119,11 @@ impl HttpClient for ReqwestClient {
         if let Some(headers) = headers {
             builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, v));
         }
-        Ok(builder.send().await?.json::<T>().await?)
+
+        let response = builder.send().await?;
+        let txt = response.text().await?;
+        //println!("{:?}", txt.clone());
+        Ok(serde_json::from_str(txt.as_str()).unwrap())
     }
 
     async fn put<T: DeserializeOwned>(

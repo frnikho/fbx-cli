@@ -4,7 +4,7 @@ use crate::models::args::Cli;
 use crate::models::freebox::authorization::AuthTokenRequest;
 use crate::services::api::FreeboxOSApi;
 use clap::Parser;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use url::Url;
 
 #[derive(Clone, Debug)]
@@ -33,12 +33,10 @@ impl App {
 
     pub async fn initialize(&mut self) {
         let pref = &self.config.pref;
-        let url = Url::parse(pref.base_url.as_str());
-        if let Ok(url) = url {
+        if let Ok(url) = Url::parse(pref.base_url.as_str()) {
             self.client.set_url(url.to_string());
         } else {
-            self.client
-                .set_url(format!("{}/api/{}", pref.base_url, pref.version));
+            self.client.set_url(format!("{}/api/{}", pref.base_url, pref.version));
         }
     }
 }
@@ -64,5 +62,12 @@ impl From<AuthAppConfig> for AuthTokenRequest {
 pub struct ResponseResult<T> {
     pub success: bool,
     pub message: Option<String>,
-    pub result: T,
+    pub result: Option<T>,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct SuccessResponse {
+    pub success: bool,
+}
+
+pub type EmptyResponse = ();

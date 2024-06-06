@@ -1,5 +1,5 @@
 [package]
-name = "fbx_cli"
+name = "fbx"
 version = "0.0.1"
 edition = "2021"
 description = "Freebox OS CLI"
@@ -33,6 +33,8 @@ confy = {version = "0.6.1", features = ["toml"]}
 spinners = "4.1.1"
 whoami = {version = "1.5.1", features = []}
 url = "2.5.0"
+anyhow = {version = "1.0.86", features = ["backtrace"]}
+thiserror = "1.0.61"
 
 [build-dependencies]
 clap = "4.5.4"

@@ -100,6 +100,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.86"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b3d1d046238990b9cf5bcde22a3fb3584ee5cf65fb2765f454ed428c7a0063da"
+dependencies = [
+ "backtrace",
+]
+
+[[package]]
 name = "async-attributes"
 version = "1.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -839,9 +848,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9fc0510504f03c51ada170672ac806f1f105a88aa97a5281117e1ddc3368e51a"
 
 [[package]]
-name = "fbx_cli"
+name = "fbx"
 version = "0.0.1"
 dependencies = [
+ "anyhow",
  "async-std",
  "chrono",
  "clap 4.5.4",
@@ -861,6 +871,7 @@ dependencies = [
  "serde_json",
  "sha1",
  "spinners",
+ "thiserror",
  "time",
  "tokio",
  "url",

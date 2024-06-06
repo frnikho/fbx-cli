@@ -1,4 +1,5 @@
 use std::error::Error;
+use anyhow::__private::kind::TraitKind;
 use url::ParseError;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -27,27 +28,13 @@ pub enum ApiError {
 impl From<reqwest::Error> for ApiError {
     fn from(_value: reqwest::Error) -> Self {
         println!("Error: {:?}", _value);
-        match _value.source() {
-            Some(source) => {
-                if source.to_string().contains("404") {
-                    ApiError::NotFound
-                } else if source.to_string().contains("401") {
-                    ApiError::Unauthorized("Unauthorized !".to_string())
-                } else if source.to_string().contains("400") {
-                    ApiError::BadRequest("Bad request !".to_string())
-                } else if source.to_string().contains("403") {
-                    ApiError::Forbidden("Forbidden !".to_string())
-                } else {
-                    ApiError::Internal("Internal error !".to_string())
-                }
-            }
-            None => ApiError::Internal("Internal error !".to_string()),
-        }
+        ApiError::Internal("".to_string())
     }
 }
 
 impl From<ApiError> for ClientError {
     fn from(value: ApiError) -> Self {
+        println!("Error: {:?}", value);
         match value {
             ApiError::NotFound => ClientError::NotFound("Not found !"),
             ApiError::Unauthorized(_) => ClientError::Unauthorized("Unauthorized !"),

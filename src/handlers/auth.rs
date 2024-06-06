@@ -1,12 +1,13 @@
+use std::collections::HashMap;
 use crate::app::App;
-use crate::config::{FbxApp, FbxAppStatus, FbxSession};
-use crate::models::args::AuthLoginArgs;
+use crate::config::{FbxSession};
+use crate::models::args::{AuthLoginArgs, AuthSetUrlArgs};
 use crate::models::exception::ClientError;
-use crate::models::freebox::authorization::{
-    AuthSessionStartRequest, AuthTokenRequest, AuthTrackAuthorizationProgressStatus,
-};
-use crate::services::api::FreeboxOSApiCalls;
+use crate::models::freebox::authorization::{AuthSessionStartRequest, AuthTokenRequest, AuthTokenResult, AuthTrackAuthorizationProgressStatus};
+use crate::services::api::{FreeboxOSApiCalls};
 use url::Url;
+
+pub const HEADER_FBX_TOKEN: &str = "X-Fbx-App-Auth";
 
 pub struct Auth;
 
@@ -15,33 +16,42 @@ impl Auth {
         let url = Url::parse(arg.url.as_str())
             .map_err(|_e| ClientError::InvalidUrl("Url non valide !"))?;
         app.client.set_url(url.to_string());
-        let auth_token_request_body = AuthTokenRequest::default();
-        let app_register_response = app
-            .api
-            .authorize_app(&app.client, auth_token_request_body.clone())
-            .await?;
-        println!("En attente de l'acceptation de l'application sur la Freebox...");
+
+        let token_request = AuthTokenRequest::new(&arg.app_id, &arg.app_version);
+        let token_result = if let Some(fbx_app) = &app.config.app {
+            match &fbx_app.app_token {
+                Some(x) => AuthTokenResult::new(x.clone(), fbx_app.track_id),
+                None => Self::register_app(app, &token_request).await?
+            }
+        } else {
+            Self::register_app(app, &token_request).await?
+        };
         loop {
             let response = app
                 .api
-                .get_authorization_status(&app.client, app_register_response.result.track_id)
+                .get_authorization_status(&app.client, token_result.track_id)
                 .await?;
-            if response.result.status == AuthTrackAuthorizationProgressStatus::Granted {
-                app.config.app = Some(FbxApp {
-                    track_id: app_register_response.result.track_id.clone(),
-                    app_id: auth_token_request_body.app_id.clone(),
-                    status: FbxAppStatus::Granted(app_register_response.result.app_token.clone()),
-                    created_at: chrono::Utc::now(),
-                    authorized_at: Some(chrono::Utc::now()),
-                    version: auth_token_request_body.app_version.clone(),
-                });
-                break;
-            }
+            match response.result.status {
+                AuthTrackAuthorizationProgressStatus::Timeout => {
+                    println!("Timeout de l'acceptation de l'application sur la Freebox...");
+                    break;
+                },
+                AuthTrackAuthorizationProgressStatus::Denied => {
+                    println!("L'application a été refusée sur la Freebox...");
+                    break;
+                },
+                AuthTrackAuthorizationProgressStatus::Granted => {
+                    app.config.register_app_granted();
+                    break;
+                },
+                _ => {}
+            };
             tokio::time::sleep(tokio::time::Duration::from_secs(2)).await;
         }
         let login_response = app.api.login(&app.client, None).await?;
         let body = AuthSessionStartRequest::new(
-            app_register_response.result.app_token,
+            token_request.clone(),
+            token_result.app_token,
             login_response.result.challenge.expect(""),
         )
         .ok_or_else(|| ClientError::RequestError("Token"))?;
@@ -51,11 +61,25 @@ impl Auth {
                 token_session: response.result.session_token,
                 created_at: chrono::Utc::now(),
             });
+            app.config.pref.base_url = url.to_string();
             println!("Authentification réussie !");
         } else {
             println!("Authentification échouée !");
         }
         Ok(())
+    }
+
+    pub async fn register_app(app: &mut App, token_request: &AuthTokenRequest) -> Result<AuthTokenResult, ClientError> {
+        let app_register_response = app
+            .api
+            .authorize_app(&app.client, token_request.clone())
+            .await?;
+        app.config.register_app_pending(
+            &token_request.app_id,
+            &token_request.app_version,
+            &app_register_response,
+        );
+        Ok(app_register_response.result)
     }
 
     pub async fn status(_app: &mut App) -> Result<(), ClientError> {
@@ -69,68 +93,82 @@ impl Auth {
         }
         match &_app.config.session {
             Some(session) => {
-                println!("Session token: {}", session.token_session);
-                let a = _app
+                let login_response = _app
                     .api
                     .login(&_app.client, Some(session.token_session.clone()))
-                    .await;
-                match a {
-                    Ok(res) => {
-                        println!("{:?}", res);
-                    }
-                    Err(e) => {
-                        println!("{:?}", e);
-                    }
+                    .await?;
+                match login_response.result.logged_in {
+                    true => println!("Logged in !"),
+                    false => println!("Not logged in !"),
                 }
             }
-            None => {
-                println!("Session not initialized");
-            }
+            None => println!("Session not initialized"),
         }
         Ok(())
     }
 
-    pub async fn logout(_app: &mut App) -> Result<(), ClientError> {
+    pub async fn logout(app: &mut App) -> Result<(), ClientError> {
+        let session = required_login(app).await?;
+        app.api.logout(&app.client, &session).await?;
+        println!("Logout success !");
         Ok(())
     }
 
-    pub async fn set_url(_app: &mut App) -> Result<(), ClientError> {
+    pub async fn set_url(app: &mut App, args: AuthSetUrlArgs) -> Result<(), ClientError> {
+        let url = Url::parse(args.url.as_str())
+            .map_err(|_e| ClientError::InvalidUrl("Url non valide !"))?;
+        app.client.set_url(url.to_string());
+        if !args.skip_verification {
+            app.api.api_version(&app.client).await?;
+            return Ok(());
+        }
+        app.config.pref.base_url = url.to_string();
         Ok(())
     }
 
     pub async fn init(_app: &mut App) -> Result<(), ClientError> {
         Ok(())
     }
+}
 
-    /*async fn handle(app: &mut App, arg: &AuthCommands) -> Result<(), ApiException> {
-        match arg {
-            AuthCommands::Status => {
-                println!("Status auth");
-            },
-            AuthCommands::Logout => {
-                println!("Logout auth");
-            },
-            AuthCommands::Login(_args) => {
-                println!("Login auth");
-            },
-            AuthCommands::SetUrl(_args) => {
-                println!("Url updated !");
-            },
-            AuthCommands::Init(args) => {
-                if let Some(url) = &args.url {
-                    app.client.set_url(url.clone());
-                }
-                //let disco = FreeboxDiscover {};
-                //let a = disco.discover_device(Duration::from_secs(5)).await.await;
-                //println!("Init auth");
-                let log_res = app.api.login(&app.client, None).await.unwrap();
-                println!("{:?}", log_res);
-
-                /*let mut hasher: Hmac<Sha1> = Mac::new_from_slice(response.result.app_token.as_bytes()) .expect("HMAC algoritms can take keys of any size");
-                hasher.update(log_res.result.challenge.expect("Challenge cannot be null").as_bytes());*/
-
+pub async fn required_login(app: &mut App) -> Result<String, ClientError> {
+    match &app.config.session {
+        Some(session) => {
+            match app.api.login(&app.client, Some(session.token_session.clone())).await?.result.logged_in {
+                true => Ok(session.token_session.clone()),
+                false => Ok(renew_session(app).await?),
             }
-        }
-        Ok(())
-    }*/
+        },
+        None => Err(ClientError::Unauthorized("You must be logged in")),
+    }
+}
+
+pub async fn renew_session(app: &mut App) -> Result<String, ClientError> {
+    match &app.config.app {
+        Some(fbx_app) => {
+            let token_result = AuthTokenResult::new(fbx_app.app_token.clone().ok_or(ClientError::Unauthorized("You must be logged in"))?, fbx_app.track_id);
+            let login_response = app.api.login(&app.client, None).await?;
+            let body = AuthSessionStartRequest::new(
+                AuthTokenRequest::new(&Some(fbx_app.app_id.clone()), &Some(fbx_app.version.clone())),
+                token_result.app_token,
+                login_response.result.challenge.ok_or(ClientError::RequestError("You must be logged in"))?,
+            )
+            .ok_or_else(|| ClientError::RequestError("Token"))?;
+            let response = app.api.start_session(&app.client, body).await?;
+            if response.success {
+                app.config.session = Some(FbxSession {
+                    token_session: response.result.session_token.clone(),
+                    created_at: chrono::Utc::now(),
+                });
+                Ok(response.result.session_token)
+            } else {
+                Err(ClientError::Unauthorized("You must be logged in"))
+            }
+        },
+        None => Err(ClientError::Unauthorized("You must be logged in")),
+    }
+}
+
+pub fn auth_header(session_token: &String) -> Option<HashMap<String, String>> {
+    Some(HashMap::from([(String::from(HEADER_FBX_TOKEN), session_token.clone())]))
 }

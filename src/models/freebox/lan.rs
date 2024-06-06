@@ -1,4 +1,4 @@
-use crate::app::ResponseResult;
+use crate::app::{ResponseResult, SuccessResponse};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Deserialize)]
@@ -70,7 +70,7 @@ pub struct LanCount {
 pub struct LanHost {
     pub id: String,
     pub primary_name: String,
-    pub l2ident: Vec<LanHostL2Ident>,
+    pub l2ident: LanHostL2Ident,
     pub host_type: LanHostType,
     pub primary_name_manual: bool,
     pub vendor_name: String,
@@ -80,7 +80,7 @@ pub struct LanHost {
     pub active: bool,
     pub last_activity: i32,
     pub first_activity: i32,
-    pub names: Vec<LanHostName>,
+    pub names: Option<Vec<LanHostName>>,
     pub l3connectivities: Vec<LanHostL3Connectivity>,
     pub network_control: Option<LanHostNetworkControl>,
 }
@@ -94,8 +94,7 @@ pub struct LanHostName {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LanHostL2Ident {
     pub id: String,
-    #[serde(rename = "type")]
-    pub kind: LanHostL2IdentType,
+    pub r#type: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -189,7 +188,7 @@ pub enum LanHostType {
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct WakeOnLan {
+pub struct WakeOnLanBody {
     pub mac: String,
     pub password: Option<String>,
 }
@@ -198,6 +197,7 @@ pub type ListLanCountResponse = ResponseResult<Vec<LanCount>>;
 pub type ListLanResponse = ResponseResult<Vec<LanHost>>;
 pub type GetLanResponse = ResponseResult<LanHost>;
 pub type UpdateLanResponse = ResponseResult<LanHost>;
+pub type WakeOnLanResponse = SuccessResponse;
 
 pub type GetLanConfig = ResponseResult<LanConfig>;
 pub type UpdateLanConfig = ResponseResult<LanConfig>;

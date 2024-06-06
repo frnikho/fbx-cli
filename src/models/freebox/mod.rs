@@ -14,3 +14,6 @@ pub mod system;
 pub mod version;
 pub mod vm;
 pub mod wifi;
+mod switch;
+mod upnp;
+mod call;

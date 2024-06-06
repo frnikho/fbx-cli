@@ -1,4 +1,4 @@
-use crate::app::ResponseResult;
+use crate::app::{EmptyResponse, ResponseResult, SuccessResponse};
 use serde::Deserialize;
 
 pub type SystemInfoResult = ResponseResult<SystemInfo>;
@@ -6,10 +6,10 @@ pub type SystemInfoResult = ResponseResult<SystemInfo>;
 #[derive(Clone, Debug, Deserialize)]
 pub struct SystemInfo {
     pub mac: String,
-    pub sensors: Vec<SystemSensor>,
+    pub sensors: Option<Vec<SystemSensor>>,
     pub model_info: SystemModel,
-    pub fans: Vec<SystemSensor>,
-    pub expansions: Vec<SystemExpansion>,
+    pub fans: Option<Vec<SystemSensor>>,
+    pub expansions: Option<Vec<SystemExpansion>>,
     pub box_authenticated: bool,
     pub disk_status: DiskStatus,
     pub uptime: String,
@@ -90,3 +90,64 @@ pub enum DiskStatus {
     #[serde(rename = "active")]
     Active,
 }
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct SystemUpdateStatus {
+    pub state: SystemUpdateStatusState,
+    pub upgrade_state: Option<UpgradeState>
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub struct UpgradeState {
+    pub state: UpgradeStateKind,
+    pub old_version: String,
+    pub new_version: String,
+    pub percent: i32,
+    pub error_string: String,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub enum UpgradeStateKind {
+    #[serde(rename = "downloading")]
+    Downloading,
+    #[serde(rename = "download_failed")]
+    DownloadFailed,
+    #[serde(rename = "checking")]
+    Checking,
+    #[serde(rename = "check_failed")]
+    CheckFailed,
+    #[serde(rename = "prepare_write")]
+    PrepareWrite,
+    #[serde(rename = "prepare_write_failed")]
+    PrepareWriteFailed,
+    #[serde(rename = "writing")]
+    Writing,
+    #[serde(rename = "write_failed")]
+    WriteFailed,
+    #[serde(rename = "reread")]
+    Reread,
+    #[serde(rename = "reread_failed")]
+    RereadFailed,
+    #[serde(rename = "commit")]
+    Commit,
+    #[serde(rename = "commit_failed")]
+    CommitFailed,
+}
+
+#[derive(Clone, Debug, Deserialize)]
+pub enum SystemUpdateStatusState {
+    #[serde(rename = "initializing")]
+    Initializing,
+    #[serde(rename = "upgrading")]
+    Upgrading,
+    #[serde(rename = "up_to_date")]
+    UpToDate,
+    #[serde(rename = "error")]
+    Error,
+}
+
+pub type GetSystemInfoRequest = ResponseResult<SystemInfo>;
+pub type RebootRequest = SuccessResponse;
+pub type ShutdownRequest = EmptyResponse;
+
+pub type GetUpdateStatusResponse = ResponseResult<SystemUpdateStatus>;

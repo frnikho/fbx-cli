@@ -59,6 +59,28 @@ pub enum Commands {
         cmd: SystemCommands,
     },
     Info,
+    Dhcp {
+        #[clap(subcommand)]
+        cmd: DhcpCommands,
+    },
+    Ftp {
+        #[clap(subcommand)]
+        cmd: FtpCommands,
+    },
+    Port {
+        #[clap(subcommand)]
+        cmd: PortCommands,
+    },
+    Lcd,
+    Notification,
+    Wifi {
+        #[clap(subcommand)]
+        cmd: WifiCommands
+    },
+    Vpn {
+        #[clap(subcommand)]
+        cmd: VpnCommands
+    },
 }
 
 /*
@@ -151,6 +173,31 @@ pub enum DevicesCommands {
 }
 
 #[derive(Subcommand, Debug, Clone)]
+pub enum DhcpCommands {
+    Get,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum WifiCommands {
+    Get,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum FtpCommands {
+    Get,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum VpnCommands {
+    Get,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum PortCommands {
+    Get,
+}
+
+#[derive(Subcommand, Debug, Clone)]
 pub enum AuthCommands {
     Status,
     Logout,
@@ -162,11 +209,20 @@ pub enum AuthCommands {
 #[derive(Args, Debug, Clone)]
 pub struct AuthSetUrlArgs {
     pub url: String,
+
+    #[arg(long, help = "Skip verification of url", default_value_t = false, action = ArgAction::SetTrue)]
+    pub skip_verification: bool,
 }
 
 #[derive(Args, Debug, Clone)]
 pub struct AuthLoginArgs {
     pub url: String,
+
+    #[arg(long, help = "override app_id", default_value = None, action = ArgAction::SetTrue)]
+    pub app_id: Option<String>,
+
+    #[arg(long, help = "override app_version", default_value = None, action = ArgAction::SetTrue)]
+    pub app_version: Option<String>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -189,7 +245,16 @@ pub enum SettingsCommands {
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum SystemCommands {
+    #[clap(about = "Shutdown the freebox")]
     Shutdown,
+    #[clap(about = "Reboot the freebox")]
     Reboot,
+    #[clap(alias = "info", about = "Get system information")]
     Get,
+    #[clap(about = "Display update state")]
+    Update,
+    #[clap(about = "Change/display system language")]
+    Language {
+
+    }
 }
