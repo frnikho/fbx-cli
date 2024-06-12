@@ -1,4 +1,4 @@
-use crate::app::ResponseResult;
+/*use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
 use crate::models::freebox::lan::LanHost;
 
@@ -64,3 +64,4 @@ pub type ListDHCPStaticLeasesResponse = ResponseResult<Vec<DHCPStaticLease>>;
 pub type ListDHCPDynamicLeasesResponse = ResponseResult<Vec<DHCPDynamicLease>>;
 pub type GetDHCPStaticLeasesResponse = ResponseResult<DHCPStaticLease>;
 pub type GetDHCPDynamicLeasesResponse = ResponseResult<DHCPDynamicLease>;
+*/

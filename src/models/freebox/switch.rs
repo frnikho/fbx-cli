@@ -1,4 +1,4 @@
-use serde::Deserialize;
+/*use serde::Deserialize;
 use serde_json::Value;
 use crate::app::ResponseResult;
 
@@ -116,4 +116,4 @@ pub struct SwitchPortStats {
 pub type ListSwitchStatus = ResponseResult<Vec<SwitchPortStatus>>;
 pub type GetSwitchConfig = ResponseResult<SwitchPortConfig>;
 pub type UpdateSwitchConfig = ResponseResult<SwitchPortConfig>;
-pub type GetSwitchPortStats = ResponseResult<SwitchPortStats>;
+pub type GetSwitchPortStats = ResponseResult<SwitchPortStats>;*/

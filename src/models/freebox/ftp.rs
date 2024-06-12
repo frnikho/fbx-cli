@@ -1,4 +1,4 @@
-use crate::app::ResponseResult;
+/*use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -35,3 +35,4 @@ pub struct FtpConfigBody {
 }
 
 pub type GetFtpConfigResponse = ResponseResult<FtpConfig>;
+*/

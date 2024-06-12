@@ -22,18 +22,15 @@ pub struct FbxConfig {
 
 impl FbxConfig {
 
-    pub fn register_app_pending(&mut self, app_id: &String, app_version: &String, body: &AuthTokenResponse) {
+    pub fn register_app_pending(&mut self, app_id: &str, app_version: &str, body: &AuthTokenResponse) {
         let mut fbx_app = FbxApp::default();
-        fbx_app.register_pending_app(app_id.clone(), app_version.clone(), &body);
+        fbx_app.register_pending_app(app_id, app_version, body);
         self.app = Some(fbx_app);
     }
 
     pub fn register_app_granted(&mut self) {
-        match self.app {
-            Some(ref mut app) => {
-                app.register_granted_app();
-            },
-            None => (),
+        if let Some(fbx_app) = &mut self.app {
+            fbx_app.register_granted_app();
         }
     }
 
@@ -52,11 +49,11 @@ pub struct FbxApp {
 
 impl FbxApp {
 
-    pub fn register_pending_app(&mut self, app_id: String, app_version: String, body: &AuthTokenResponse) {
+    pub fn register_pending_app(&mut self, app_id: &str, app_version: &str, body: &AuthTokenResponse) {
         self.status = FbxAppStatus::Pending;
         self.authorized_at = None;
-        self.app_id = app_id;
-        self.version = app_version;
+        self.app_id = app_id.to_string();
+        self.version = app_version.to_string();
         self.track_id = body.result.track_id;
         self.created_at = Utc::now();
         self.app_token = Some(body.result.app_token.clone());

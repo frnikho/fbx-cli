@@ -29,7 +29,7 @@ pub enum FreeboxMajorVersion {
 
 impl FreeboxMajorVersion {
     pub fn from_api_version(version: String) -> Self {
-        let b = version.split(".").collect::<Vec<&str>>();
+        let b = version.split('.').collect::<Vec<&str>>();
         if b.len() > 1 {
             return FreeboxMajorVersion::from(b[0]);
         }

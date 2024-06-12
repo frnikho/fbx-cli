@@ -1,17 +1,25 @@
-use std::error::Error;
-use anyhow::__private::kind::TraitKind;
+use thiserror::Error;
 use url::ParseError;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum ClientError {
+    #[error("Timeout")]
     Timeout,
+    #[error("Request error")]
     RequestError(&'static str),
+    #[error("Unknown error")]
     UnknownError(&'static str),
+    #[error("Unauthorized")]
     Unauthorized(&'static str),
+    #[error("Not found")]
     NotFound(&'static str),
+    #[error("Builder error")]
     BuilderError,
+    #[error("Internal error")]
     InternalError,
+    #[error("Invalid url")]
     InvalidUrl(&'static str),
+    #[error("Authorization required")]
     CliNeedAuth(Option<&'static str>),
 }
 
@@ -46,11 +54,9 @@ impl From<ApiError> for ClientError {
     }
 }
 
-impl Into<ClientError> for ParseError {
-    fn into(self) -> ClientError {
-        match self {
-            _ => ClientError::InvalidUrl("Url non valide !"),
-        }
+impl From<ParseError> for ClientError {
+    fn from(_value: ParseError) -> Self {
+        ClientError::InvalidUrl("Url non valide !")
     }
 }
 

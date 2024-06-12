@@ -1,4 +1,4 @@
-use crate::app::ResponseResult;
+/*use crate::app::ResponseResult;
 use crate::models::freebox::lan::LanHost;
 use serde::{Deserialize, Serialize};
 
@@ -50,3 +50,4 @@ pub type GetProfileResponse = ResponseResult<Profile>;
 pub type UpdateProfileResponse = ResponseResult<Profile>;
 pub type DeleteProfileResponse = ResponseResult<()>;
 pub type CreateProfileResponse = ResponseResult<ProfileCreated>;
+*/

@@ -1,5 +1,12 @@
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use clap::ValueEnum;
+use comfy_table::presets::UTF8_FULL;
+use comfy_table::{Attribute, Cell, ContentArrangement, Table};
 use crate::app::{ResponseResult, SuccessResponse};
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use crate::terminal::{CliDisplay, CliDisplayArg};
 
 #[derive(Debug, Clone, Deserialize)]
 pub enum LanConfigError {
@@ -85,6 +92,31 @@ pub struct LanHost {
     pub network_control: Option<LanHostNetworkControl>,
 }
 
+impl CliDisplay for LanHost {
+    fn json(&self) -> Value {
+        json!(self)
+    }
+
+    fn stdout(&self, _arg: crate::terminal::CliDisplayArg) -> Box<dyn Display> {
+        let mut table = Table::new();
+        table.load_preset(UTF8_FULL)
+            .set_content_arrangement(ContentArrangement::Dynamic)
+            .set_header(vec![
+                Cell::new("Nom du device").add_attribute(Attribute::Bold),
+                Cell::new("Type"),
+                Cell::new("Status"),
+            ]);
+
+        table.add_row(vec![
+            Cell::new(format!("{}\n({})", self.primary_name, self.vendor_name)),
+            Cell::new(self.host_type.to_string()),
+            Cell::new(if self.active { "Active" } else { "Inactive" })
+        ]);
+
+        Box::new(table)
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LanHostName {
     pub name: String,
@@ -113,6 +145,13 @@ pub enum LanHostL2IdentType {
     WSDiscovery,
 }
 
+#[derive(Debug, Clone, Serialize)]
+pub struct UpdateLanHostBody {
+    pub name: Option<String>,
+    pub host_type: Option<LanHostType>,
+    pub persistent: Option<bool>,
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LanHostL3Connectivity {
     pub addr: String,
@@ -139,7 +178,7 @@ pub struct LanHostNetworkControl {
     pub current_mode: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(ValueEnum, Debug, Clone, Deserialize, Serialize)]
 pub enum LanHostType {
     #[serde(rename = "workstation")]
     Workstation,
@@ -187,6 +226,12 @@ pub enum LanHostType {
     Other,
 }
 
+impl Display for LanHostType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WakeOnLanBody {
     pub mac: String,
@@ -195,8 +240,46 @@ pub struct WakeOnLanBody {
 
 pub type ListLanCountResponse = ResponseResult<Vec<LanCount>>;
 pub type ListLanResponse = ResponseResult<Vec<LanHost>>;
-pub type GetLanResponse = ResponseResult<LanHost>;
-pub type UpdateLanResponse = ResponseResult<LanHost>;
+
+impl ListLanResponse {
+    pub fn display(self) {
+        let mut table = Table::new();
+        table.load_preset(UTF8_FULL)
+            .set_content_arrangement(ContentArrangement::Dynamic)
+            .set_header(vec![
+                Cell::new("Nom du device").add_attribute(Attribute::Bold),
+                Cell::new("Type"),
+                Cell::new("Status"),
+                Cell::new("Id")
+            ]);
+
+        for x in self.result.unwrap_or_default() {
+            table.add_row(vec![
+                Cell::new(format!("{}\n({})", x.primary_name, x.vendor_name)),
+                Cell::new(x.host_type.to_string()),
+                Cell::new(if x.active {"Active" } else { "Inactive" }),
+                Cell::new(x.id)
+            ]);
+        }
+
+        println!("{table}");
+    }
+}
+
+pub type LanHostResponse = ResponseResult<LanHost>;
+
+impl CliDisplay for LanHostResponse {
+    fn json(&self) -> Value {
+        json!(self.result)
+    }
+
+    fn stdout(&self, arg: CliDisplayArg) -> Box<dyn Display> {
+        self.result.as_ref().unwrap().stdout(arg)
+    }
+}
+
+pub type GetLanResponse = LanHostResponse;
+pub type UpdateLanResponse = LanHostResponse;
 pub type WakeOnLanResponse = SuccessResponse;
 
 pub type GetLanConfig = ResponseResult<LanConfig>;

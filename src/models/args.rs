@@ -1,4 +1,5 @@
 use clap::{ArgAction, Args, Parser, Subcommand};
+use crate::models::freebox::lan::LanHostType;
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "fbx")]
@@ -71,7 +72,10 @@ pub enum Commands {
         #[clap(subcommand)]
         cmd: PortCommands,
     },
-    Lcd,
+    Lcd {
+        #[clap(subcommand)]
+        cmd: LcdCmds,
+    },
     Notification,
     Wifi {
         #[clap(subcommand)]
@@ -100,6 +104,44 @@ pub struct VmListArgs {}
 pub struct VmGetArgs {
     uuid: String,
 }
+
+/***
+ * LCD
+ ***/
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum LcdCmds {
+    #[clap(alias = "info", about = "Retrieve and display LCD Info")]
+    Get,
+    #[clap(about = "Change LCD parameters")]
+    Set {
+        #[clap(subcommand)]
+        cmd: LcdSetCmds,
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum LcdSetCmds {
+    #[clap(about = "Set the brightness (0-100)", disable_help_flag = true)]
+    Brightness {
+        #[arg(value_name = "0-100")]
+        brightness: u8,
+    },
+    #[clap(about = "Set the orientation (0/90/180/270)", disable_help_flag = true)]
+    Orientation {
+        #[arg(value_name = "0/90/180/270")]
+        orientation: String,
+    },
+    #[clap(about = "Hide or not the wifi key (true/false)", disable_help_flag = true)]
+    HideWifiKey {
+        #[arg(value_name = "TRUE/FALSE")]
+        hide: String,
+    },
+}
+
+/***
+ * Config
+ ***/
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum ConfigCommands {
@@ -170,17 +212,93 @@ pub struct InitArgs {
 #[derive(Subcommand, Debug, Clone)]
 pub enum DevicesCommands {
     List,
+    Get(DeviceGetArgs),
+    Update(DeviceUpdateArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct DeviceGetArgs {
+    pub id: String,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct DeviceUpdateArgs {
+    #[arg(alias = "id")]
+    pub name: String,
+    #[arg(short, long = "name", help = "Mettre à jour le nom du périphérique")]
+    pub new_name: Option<String>,
+    #[arg(long = "type", help = "Mettre à jour le type du périphérique")]
+    pub r#type: Option<LanHostType>, //TODO transform to enum
+    #[arg(long = "persistent", help = "Effacer l'appareil s'il n'est pas présent lors du prochain redémarrage de la freebox")]
+    pub persistent: Option<bool>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum DhcpCommands {
+    #[clap(alias = "info", about = "Get wifi info")]
     Get,
 }
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum WifiCommands {
-    Get,
+    Get(WifiGetArgs),
+    Scan(WifiScanArgs),
+    QrCode(WifiQrCodeArgs),
+    Planning(WifiPlanningArgs),
+    Config {
+        #[clap(subcommand)]
+        cmd: WifiConfigCmds,
+    },
+    Filter(WifiFilterArgs),
+    Diag(WifiDiagArgs),
+    Wps {
+        #[clap(subcommand)]
+        cmd: WifiWpsCmds,
+    },
+    Guest(WifiGuestArgs),
 }
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiGetArgs {}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiScanArgs {}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiQrCodeArgs {}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiPlanningArgs {}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum WifiConfigCmds {
+    Set,
+    Reset(WifiConfigResetArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiConfigResetArgs {
+    #[arg(long, help = "Reset all wifi configuration", default_value_t = false, action = ArgAction::SetTrue)]
+    pub all: bool,
+    pub ap: bool,
+    pub bss: bool,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiFilterArgs {}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiDiagArgs {}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum WifiWpsCmds {
+    Start,
+    Stop,
+    List,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiGuestArgs {}
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum FtpCommands {
@@ -203,7 +321,6 @@ pub enum AuthCommands {
     Logout,
     Login(AuthLoginArgs),
     SetUrl(AuthSetUrlArgs),
-    Init(InitArgs),
 }
 
 #[derive(Args, Debug, Clone)]

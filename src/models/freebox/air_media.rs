@@ -1,4 +1,5 @@
-use serde::{Deserialize, Serialize};
+/*use serde::{Deserialize, Serialize};
+use crate::app::{ResponseResult, SuccessResponse};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
 pub enum AirMediaError {
@@ -70,3 +71,35 @@ pub struct AirMediaReceiverCapabilities {
     pub video: bool,
     pub screen: bool,
 }
+
+#[derive(Clone, Debug, Serialize)]
+pub struct AirMediaReceiverRequest {
+    pub action: AirMediaReceiverAction,
+    pub media_type: AirMediaReceiverMediaType,
+    pub password: String,
+    pub position: i64,
+    pub media: String,
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub enum AirMediaReceiverAction {
+    #[serde(rename = "start")]
+    Start,
+    #[serde(rename = "stop")]
+    Stop
+}
+
+#[derive(Clone, Debug, Serialize)]
+pub enum AirMediaReceiverMediaType {
+    Photo,
+    Video,
+}
+
+pub type GetAirMediaConfigResponse = ResponseResult<AirMediaConfig>;
+pub type UpdateAirMediaConfigResponse = ResponseResult<AirMediaConfig>;
+
+pub type ListAirMediaReceiversResponse = ResponseResult<Vec<AirMediaReceiver>>;
+
+pub type InteractAirMediaReceiverResponse = SuccessResponse;
+
+*/

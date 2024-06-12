@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+/*use serde::{Deserialize, Serialize};
 use crate::app::{ResponseResult, SuccessResponse};
 use crate::models::freebox::lan::LanHost;
 
@@ -151,13 +151,13 @@ pub enum WifiApStatusState {
 #[derive(Debug, Clone, Deserialize)]
 pub struct WifiApCapabilities {
     #[serde(rename = "2d4g")]
-    pub B2d4g: i32,
+    pub b2d4g: i32,
     #[serde(rename = "5g")]
-    pub B5g: i32,
+    pub b5g: i32,
     #[serde(rename = "6g")]
-    pub B6g: i32,
+    pub b6g: i32,
     #[serde(rename = "60g")]
-    pub B60g: i32,
+    pub b60g: i32,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -476,6 +476,28 @@ pub enum WifiCustomKeyParamsAccessType {
     NetOnly,
 }
 
+#[derive(Debug, Clone, Deserialize)]
+pub struct StandbyConfig {
+    pub use_planning: bool,
+    pub planning_mode: StandbyStateMode,
+    pub resolution: i32,
+    pub mapping: Vec<String>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub enum StandbyStateMode {
+    WifiOff,
+    Standby
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct StandbyStatus {
+    pub use_planning: bool,
+    pub planning_mode: StandbyStateMode,
+    pub next_change: i32,
+    pub available_planning_modes: Vec<StandbyStateMode>,
+}
+
 pub type GetWifiGlobalConfigResponse = ResponseResult<WifiGlobalConfig>;
 pub type UpdateWifiGlobalConfigResponse = ResponseResult<WifiGlobalConfig>;
 
@@ -509,7 +531,7 @@ pub type DeleteWifiMacFilter = SuccessResponse;
 pub type CreateWifiMacFilter = ResponseResult<WifiMacFilter>;
 
 pub type ResetWifiGlobalResponse = SuccessResponse;
-pub type GetWifiApDefualtConfigResponse = ResponseResult<WifiApConfig>;
+pub type GetWifiApDefaultConfigResponse = ResponseResult<WifiApConfig>;
 pub type GetWifiBssDefaultConfigResponse = ResponseResult<WifiBssConfig>;
 
 pub type ListGlobalWifiDiagResponse = ResponseResult<Vec<WifiDiagItem>>;
@@ -521,4 +543,4 @@ pub type ClearAllWpsSessions = SuccessResponse;
 pub type ListWifiCustomKeys = ResponseResult<Vec<WifiCustomKey>>;
 pub type GetWifiCustomKey = ResponseResult<WifiCustomKey>;
 pub type DeleteWifiCustomKey = SuccessResponse;
-pub type CreateWifiCustomKey = ResponseResult<WifiCustomKey>;
+pub type CreateWifiCustomKey = ResponseResult<WifiCustomKey>;*/

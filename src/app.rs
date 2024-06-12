@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use crate::client::ReqwestClient;
 use crate::config::FbxConfig;
 use crate::models::args::Cli;
@@ -5,7 +6,9 @@ use crate::models::freebox::authorization::AuthTokenRequest;
 use crate::services::api::FreeboxOSApi;
 use clap::Parser;
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use url::Url;
+use crate::terminal::{CliDisplay, CliDisplayArg};
 
 #[derive(Clone, Debug)]
 pub struct App {
@@ -58,16 +61,36 @@ impl From<AuthAppConfig> for AuthTokenRequest {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ResponseResult<T> {
     pub success: bool,
     pub message: Option<String>,
     pub result: Option<T>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+impl<T> ResponseResult<T> {
+    pub fn new(success: bool, message: Option<String>, result: Option<T>) -> Self {
+        ResponseResult {
+            success,
+            message,
+            result,
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SuccessResponse {
     pub success: bool,
+}
+
+impl CliDisplay for SuccessResponse {
+    fn json(&self) -> Value {
+        json!(self)
+    }
+
+    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
+        Box::new("Reboot request sent 🚀")
+    }
 }
 
 pub type EmptyResponse = ();

@@ -1,4 +1,4 @@
-use serde::Deserialize;
+/*use serde::Deserialize;
 use thiserror::Error;
 use crate::app::{ResponseResult, SuccessResponse};
 
@@ -198,4 +198,4 @@ pub type GetContactNumberResponse = ResponseResult<ContactNumber>;
 pub type ListContactNumberResponse = ResponseResult<Vec<ContactNumber>>;
 pub type CreateContactNumberResponse = ResponseResult<ContactNumber>;
 pub type DeleteContactNumberResponse = SuccessResponse;
-pub type UpdateContactNumberResponse = ResponseResult<ContactNumber>;
+pub type UpdateContactNumberResponse = ResponseResult<ContactNumber>;*/

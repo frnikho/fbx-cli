@@ -1,9 +1,12 @@
+use std::fmt::Display;
 use crate::app::{EmptyResponse, ResponseResult, SuccessResponse};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use crate::terminal::{CliDisplay, CliDisplayArg};
 
 pub type SystemInfoResult = ResponseResult<SystemInfo>;
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SystemInfo {
     pub mac: String,
     pub sensors: Option<Vec<SystemSensor>>,
@@ -20,14 +23,14 @@ pub struct SystemInfo {
     pub firmware_version: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SystemSensor {
     pub id: String,
     pub name: String,
     pub value: i32,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SystemModel {
     pub pretty_name: String,
     pub name: SystemModelType,
@@ -44,7 +47,7 @@ pub struct SystemModel {
     pub has_wop: Option<bool>,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum SystemModelType {
     #[serde(rename = "fbxgw-r1")]
     FreeboxServerV6R1,
@@ -66,7 +69,7 @@ pub enum SystemModelType {
     FreeboxV9R1,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SystemExpansion {
     #[serde(rename = "type")]
     pub kind: String,
@@ -77,7 +80,7 @@ pub struct SystemExpansion {
     pub bundle: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum DiskStatus {
     #[serde(rename = "not_detected")]
     NotDetected,
@@ -91,13 +94,13 @@ pub enum DiskStatus {
     Active,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct SystemUpdateStatus {
     pub state: SystemUpdateStatusState,
     pub upgrade_state: Option<UpgradeState>
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct UpgradeState {
     pub state: UpgradeStateKind,
     pub old_version: String,
@@ -106,7 +109,7 @@ pub struct UpgradeState {
     pub error_string: String,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum UpgradeStateKind {
     #[serde(rename = "downloading")]
     Downloading,
@@ -134,7 +137,7 @@ pub enum UpgradeStateKind {
     CommitFailed,
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub enum SystemUpdateStatusState {
     #[serde(rename = "initializing")]
     Initializing,
@@ -147,7 +150,39 @@ pub enum SystemUpdateStatusState {
 }
 
 pub type GetSystemInfoRequest = ResponseResult<SystemInfo>;
+
+impl CliDisplay for GetSystemInfoRequest {
+    fn json(&self) -> Value {
+        json!(self.clone().result)
+    }
+
+    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
+        Box::new("System info")
+    }
+}
+
 pub type RebootRequest = SuccessResponse;
+
 pub type ShutdownRequest = EmptyResponse;
 
+impl CliDisplay for ShutdownRequest {
+    fn json(&self) -> Value {
+        json!(r#"{"success": true}"#)
+    }
+
+    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
+        Box::new("Shutdown request sent 🚀")
+    }
+}
+
 pub type GetUpdateStatusResponse = ResponseResult<SystemUpdateStatus>;
+
+impl CliDisplay for GetUpdateStatusResponse {
+    fn json(&self) -> Value {
+        json!(self.result)
+    }
+
+    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
+        Box::new("Update status 🚀")
+    }
+}

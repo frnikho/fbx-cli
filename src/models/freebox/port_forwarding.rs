@@ -1,4 +1,4 @@
-use crate::app::ResponseResult;
+/*use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -52,3 +52,4 @@ pub enum IpProtocol {
 pub type ListPortForwardingResponse = ResponseResult<Vec<PortForwardingConfig>>;
 pub type GetPortForwardingResponse = ResponseResult<PortForwardingConfig>;
 pub type UpdatePortForwardingResponse = ResponseResult<PortForwardingConfig>;
+*/

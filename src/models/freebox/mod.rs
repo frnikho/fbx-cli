@@ -17,3 +17,7 @@ pub mod wifi;
 mod switch;
 mod upnp;
 mod call;
+mod vpn;
+mod file;
+mod download;
+mod home;

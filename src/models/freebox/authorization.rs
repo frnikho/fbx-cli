@@ -2,6 +2,7 @@ use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha1::Sha1;
 use std::str::FromStr;
+use crate::app::{ResponseResult, SuccessResponse};
 
 const APP_ID: &str = "dev.nikho.fbxcli";
 const APP_NAME: &str = "fbx-cli";
@@ -75,11 +76,7 @@ pub struct AuthTrackAuthorizationProgressResult {
     pub challenge: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthTrackAuthorizationProgressResponse {
-    pub success: bool,
-    pub result: AuthTrackAuthorizationProgressResult,
-}
+pub type AuthTrackAuthorizationProgressResponse = ResponseResult<AuthTrackAuthorizationProgressResult>;
 
 // Session
 
@@ -118,8 +115,10 @@ impl AuthSessionStartRequest {
                 .finalize()
                 .into_bytes()
                 .iter()
-                .map(|b| format!("{:02x}", b))
-                .collect::<String>(),
+                .fold(String::new(), |mut acc, b| {
+                    acc.push_str(&format!("{:02x}", b));
+                    acc
+                }),
         )
     }
 }
@@ -155,22 +154,10 @@ pub struct AuthSessionStartResponse {
 pub struct AuthLoginResult {
     pub logged_in: bool,
     pub challenge: Option<String>,
-    pub password_salt: String,
-    pub password_set: bool,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthLoginResponse {
-    pub success: bool,
-    pub result: AuthLoginResult,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct AuthLogoutResponse {
-    pub success: bool,
-}
-
-//
+pub type AuthLoginResponse = ResponseResult<AuthLoginResult>;
+pub type AuthLogoutResponse = SuccessResponse;
 
 #[derive(Clone, Deserialize, Debug, PartialEq)]
 pub struct AuthorizationError {
