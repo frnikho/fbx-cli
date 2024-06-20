@@ -1,4 +1,4 @@
-use crate::app::ResponseResult;
+/*use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
@@ -186,3 +186,4 @@ pub type GetFTTHStatus = ResponseResult<FTTHStatus>;
 pub type GetDDNSConfig = ResponseResult<DDNSConfig>;
 pub type UpdateDDNSConfig = ResponseResult<DDNSConfig>;
 pub type GetDDNSStatus = ResponseResult<DDNSStatus>;
+*/

@@ -1,5 +1,12 @@
-use crate::app::ResponseResult;
+use std::fmt;
+use std::fmt::{Display, Formatter};
+use clap::ValueEnum;
+use comfy_table::presets::UTF8_FULL;
+use comfy_table::{Attribute, Cell, ContentArrangement, Table};
+use crate::app::{ResponseResult, SuccessResponse};
 use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
+use crate::terminal::{CliDisplay, CliDisplayArg};
 
 #[derive(Debug, Clone, Deserialize)]
 pub enum LanConfigError {
@@ -70,7 +77,7 @@ pub struct LanCount {
 pub struct LanHost {
     pub id: String,
     pub primary_name: String,
-    pub l2ident: Vec<LanHostL2Ident>,
+    pub l2ident: LanHostL2Ident,
     pub host_type: LanHostType,
     pub primary_name_manual: bool,
     pub vendor_name: String,
@@ -80,9 +87,34 @@ pub struct LanHost {
     pub active: bool,
     pub last_activity: i32,
     pub first_activity: i32,
-    pub names: Vec<LanHostName>,
+    pub names: Option<Vec<LanHostName>>,
     pub l3connectivities: Vec<LanHostL3Connectivity>,
     pub network_control: Option<LanHostNetworkControl>,
+}
+
+impl CliDisplay for LanHost {
+    fn json(&self) -> Value {
+        json!(self)
+    }
+
+    fn stdout(&self, _arg: crate::terminal::CliDisplayArg) -> Box<dyn Display> {
+        let mut table = Table::new();
+        table.load_preset(UTF8_FULL)
+            .set_content_arrangement(ContentArrangement::Dynamic)
+            .set_header(vec![
+                Cell::new("Nom du device").add_attribute(Attribute::Bold),
+                Cell::new("Type"),
+                Cell::new("Status"),
+            ]);
+
+        table.add_row(vec![
+            Cell::new(format!("{}\n({})", self.primary_name, self.vendor_name)),
+            Cell::new(self.host_type.to_string()),
+            Cell::new(if self.active { "Active" } else { "Inactive" })
+        ]);
+
+        Box::new(table)
+    }
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -94,8 +126,7 @@ pub struct LanHostName {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LanHostL2Ident {
     pub id: String,
-    #[serde(rename = "type")]
-    pub kind: LanHostL2IdentType,
+    pub r#type: String,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -112,6 +143,13 @@ pub enum LanHostL2IdentType {
     UPnP,
     #[serde(rename = "wsd")]
     WSDiscovery,
+}
+
+#[derive(Debug, Clone, Serialize)]
+pub struct UpdateLanHostBody {
+    pub primary_name: Option<String>,
+    pub host_type: Option<LanHostType>,
+    pub persistent: Option<bool>,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -140,7 +178,7 @@ pub struct LanHostNetworkControl {
     pub current_mode: String,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(ValueEnum, Debug, Clone, Deserialize, Serialize)]
 pub enum LanHostType {
     #[serde(rename = "workstation")]
     Workstation,
@@ -188,16 +226,70 @@ pub enum LanHostType {
     Other,
 }
 
+impl Display for LanHostType {
+    fn fmt(&self, f: &mut Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
+
 #[derive(Debug, Clone, Deserialize, Serialize)]
-pub struct WakeOnLan {
+pub struct WakeOnLanBody {
     pub mac: String,
-    pub password: Option<String>,
+    pub password: String,
+}
+
+impl WakeOnLanBody {
+    pub fn new(mac: String, password: Option<String>) -> Self {
+        Self {
+            mac,
+            password: password.unwrap_or_default(),
+        }
+    }
 }
 
 pub type ListLanCountResponse = ResponseResult<Vec<LanCount>>;
 pub type ListLanResponse = ResponseResult<Vec<LanHost>>;
-pub type GetLanResponse = ResponseResult<LanHost>;
-pub type UpdateLanResponse = ResponseResult<LanHost>;
+
+impl ListLanResponse {
+    pub fn display(self) {
+        let mut table = Table::new();
+        table.load_preset(UTF8_FULL)
+            .set_content_arrangement(ContentArrangement::Dynamic)
+            .set_header(vec![
+                Cell::new("Nom du device").add_attribute(Attribute::Bold),
+                Cell::new("Type"),
+                Cell::new("Status"),
+                Cell::new("Id")
+            ]);
+
+        for x in self.result.unwrap_or_default() {
+            table.add_row(vec![
+                Cell::new(format!("{}\n({})", x.primary_name, x.vendor_name)),
+                Cell::new(x.host_type.to_string()),
+                Cell::new(if x.active {"Active" } else { "Inactive" }),
+                Cell::new(x.id)
+            ]);
+        }
+
+        println!("{table}");
+    }
+}
+
+pub type LanHostResponse = ResponseResult<LanHost>;
+
+impl CliDisplay for LanHostResponse {
+    fn json(&self) -> Value {
+        json!(self.result)
+    }
+
+    fn stdout(&self, arg: CliDisplayArg) -> Box<dyn Display> {
+        self.result.as_ref().unwrap().stdout(arg)
+    }
+}
+
+pub type GetLanResponse = LanHostResponse;
+pub type UpdateLanResponse = LanHostResponse;
+pub type WakeOnLanResponse = SuccessResponse;
 
 pub type GetLanConfig = ResponseResult<LanConfig>;
 pub type UpdateLanConfig = ResponseResult<LanConfig>;

@@ -1,17 +1,28 @@
-use std::error::Error;
+use thiserror::Error;
 use url::ParseError;
 
-#[derive(Debug, Clone, PartialEq)]
+#[derive(Error, Debug, Clone, PartialEq)]
 pub enum ClientError {
+    #[error("Timeout")]
     Timeout,
+    #[error("Request error")]
     RequestError(&'static str),
+    #[error("Unknown error")]
     UnknownError(&'static str),
+    #[error("Unauthorized")]
     Unauthorized(&'static str),
+    #[error("Not found")]
     NotFound(&'static str),
+    #[error("Builder error")]
     BuilderError,
+    #[error("Internal error")]
     InternalError,
+    #[error("Invalid url")]
     InvalidUrl(&'static str),
+    #[error("Authorization required")]
     CliNeedAuth(Option<&'static str>),
+    #[error("Authorization required")]
+    InvalidParameter(&'static str, &'static str),
 }
 
 #[derive(Debug, Clone, PartialEq)]
@@ -27,27 +38,13 @@ pub enum ApiError {
 impl From<reqwest::Error> for ApiError {
     fn from(_value: reqwest::Error) -> Self {
         println!("Error: {:?}", _value);
-        match _value.source() {
-            Some(source) => {
-                if source.to_string().contains("404") {
-                    ApiError::NotFound
-                } else if source.to_string().contains("401") {
-                    ApiError::Unauthorized("Unauthorized !".to_string())
-                } else if source.to_string().contains("400") {
-                    ApiError::BadRequest("Bad request !".to_string())
-                } else if source.to_string().contains("403") {
-                    ApiError::Forbidden("Forbidden !".to_string())
-                } else {
-                    ApiError::Internal("Internal error !".to_string())
-                }
-            }
-            None => ApiError::Internal("Internal error !".to_string()),
-        }
+        ApiError::Internal("".to_string())
     }
 }
 
 impl From<ApiError> for ClientError {
     fn from(value: ApiError) -> Self {
+        println!("Error: {:?}", value);
         match value {
             ApiError::NotFound => ClientError::NotFound("Not found !"),
             ApiError::Unauthorized(_) => ClientError::Unauthorized("Unauthorized !"),
@@ -59,11 +56,9 @@ impl From<ApiError> for ClientError {
     }
 }
 
-impl Into<ClientError> for ParseError {
-    fn into(self) -> ClientError {
-        match self {
-            _ => ClientError::InvalidUrl("Url non valide !"),
-        }
+impl From<ParseError> for ClientError {
+    fn from(_value: ParseError) -> Self {
+        ClientError::InvalidUrl("Url non valide !")
     }
 }
 

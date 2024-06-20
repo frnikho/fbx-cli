@@ -12,38 +12,38 @@ pub trait HttpClient {
         &self,
         url: &str,
         body: Option<impl Serialize>,
-        headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error>;
     async fn get<T: DeserializeOwned>(
         &self,
         url: &str,
-        headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error>;
     async fn put<T: DeserializeOwned>(
         &self,
         url: &str,
         body: Option<impl Serialize>,
-        headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error>;
     async fn delete<T: DeserializeOwned>(
         &self,
         url: &str,
-        headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error>;
 }
 
 #[derive(Debug, Clone)]
 pub struct ReqwestClient {
-    client: reqwest::Client,
-    base_url: String,
-    timeout: u64,
+    pub client: reqwest::Client,
+    pub base_url: String,
+    pub timeout: u64,
 }
 
 impl Default for ReqwestClient {
     fn default() -> Self {
         Self {
             client: reqwest::Client::default(),
-            base_url: "https://mafreebox.freebo.fr/v1".to_string(),
+            base_url: "https://mafreebox.freebox.fr/v1".to_string(),
             timeout: 5,
         }
     }
@@ -93,39 +93,43 @@ impl ReqwestClient {
 impl HttpClient for ReqwestClient {
     type Error = ApiError;
 
-    async fn post<T: DeserializeOwned>(
-        &self,
-        url: &str,
-        body: Option<impl Serialize>,
-        headers: Option<HashMap<String, String>>,
-    ) -> Result<T, Self::Error> {
-        let mut builder = self.client.post(self.fmt_url(url)).json(&body);
-        if let Some(headers) = headers {
-            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, v));
+    async fn post<T: DeserializeOwned>(&self, url: &str, body: Option<impl Serialize>, headers: Option<HashMap<String, &str>>) -> Result<T, Self::Error> {
+        let mut builder = self.client.post(self.fmt_url(url));
+        if let Some(body) = body {
+            builder = builder.json(&body);
         }
-        Ok(builder.send().await?.json::<T>().await?)
+        if let Some(headers) = headers {
+            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, *v));
+        }
+        let response = builder.send().await?;
+        let txt = response.text().await?;
+        //println!("{:?}", txt.clone());
+        Ok(serde_json::from_str(txt.as_str()).unwrap())
     }
 
     async fn get<T: DeserializeOwned>(
         &self,
         url: &str,
-        headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error> {
         let mut builder = self
             .client
             .get(self.fmt_url(url))
             .timeout(std::time::Duration::from_secs(self.timeout));
         if let Some(headers) = headers {
-            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, v));
+            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, *v));
         }
-        Ok(builder.send().await?.json::<T>().await?)
+        let response = builder.send().await?;
+        let txt = response.text().await?;
+        //println!("{:?}", txt.clone());
+        Ok(serde_json::from_str(txt.as_str()).unwrap())
     }
 
     async fn put<T: DeserializeOwned>(
         &self,
         url: &str,
         body: Option<impl Serialize>,
-        headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error> {
         let mut builder = self
             .client
@@ -133,7 +137,7 @@ impl HttpClient for ReqwestClient {
             .json(&body)
             .timeout(std::time::Duration::from_secs(self.timeout));
         if let Some(headers) = headers {
-            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, v));
+            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, *v));
         }
         Ok(builder.send().await?.json::<T>().await?)
     }
@@ -141,14 +145,14 @@ impl HttpClient for ReqwestClient {
     async fn delete<T: DeserializeOwned>(
         &self,
         url: &str,
-        headers: Option<HashMap<String, String>>,
+        headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error> {
         let mut builder = self
             .client
             .delete(self.fmt_url(url))
             .timeout(std::time::Duration::from_secs(self.timeout));
         if let Some(headers) = headers {
-            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, v));
+            builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, *v));
         }
         Ok(builder.send().await?.json::<T>().await?)
     }

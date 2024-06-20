@@ -1,18 +1,18 @@
+use std::fmt::Display;
 use crate::client::ReqwestClient;
 use crate::config::FbxConfig;
-use crate::models::args::Cli;
 use crate::models::freebox::authorization::AuthTokenRequest;
 use crate::services::api::FreeboxOSApi;
-use clap::Parser;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::{json, Value};
 use url::Url;
+use crate::terminal::{CliDisplay, CliDisplayArg};
 
 #[derive(Clone, Debug)]
 pub struct App {
     pub api: FreeboxOSApi,
     pub config: FbxConfig,
     pub client: ReqwestClient,
-    pub cli: Cli,
 }
 
 impl Default for App {
@@ -21,7 +21,6 @@ impl Default for App {
             api: FreeboxOSApi,
             config: FbxConfig::load(),
             client: ReqwestClient::default(),
-            cli: Cli::parse(),
         }
     }
 }
@@ -33,12 +32,10 @@ impl App {
 
     pub async fn initialize(&mut self) {
         let pref = &self.config.pref;
-        let url = Url::parse(pref.base_url.as_str());
-        if let Ok(url) = url {
+        if let Ok(url) = Url::parse(pref.base_url.as_str()) {
             self.client.set_url(url.to_string());
         } else {
-            self.client
-                .set_url(format!("{}/api/{}", pref.base_url, pref.version));
+            self.client.set_url(format!("{}/api/{}", pref.base_url, pref.version));
         }
     }
 }
@@ -60,9 +57,38 @@ impl From<AuthAppConfig> for AuthTokenRequest {
     }
 }
 
-#[derive(Clone, Debug, Deserialize)]
+#[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct ResponseResult<T> {
     pub success: bool,
     pub message: Option<String>,
-    pub result: T,
+    pub error_code: Option<String>,
+    pub result: Option<T>,
 }
+
+impl<T> ResponseResult<T> {
+    pub fn new(success: bool, message: Option<String>, result: Option<T>, error_code: Option<String>) -> Self {
+        ResponseResult {
+            success,
+            message,
+            result,
+            error_code
+        }
+    }
+}
+
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct SuccessResponse {
+    pub success: bool,
+}
+
+impl CliDisplay for SuccessResponse {
+    fn json(&self) -> Value {
+        json!(self)
+    }
+
+    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
+        Box::new("Reboot request sent 🚀")
+    }
+}
+
+pub type EmptyResponse = ();
