@@ -1,4 +1,4 @@
-/*use serde::{Deserialize};
+use serde::{Deserialize};
 use serde_json::Value;
 use thiserror::Error;
 use crate::app::ResponseResult;
@@ -142,4 +142,3 @@ pub enum VPNServerConfigType {
 }
 
 pub type ListVPNServerResponse = ResponseResult<Vec<VPNServer>>;
-*/

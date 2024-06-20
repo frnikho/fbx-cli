@@ -3,7 +3,7 @@ use std::future::Future;
 use serde_json::Value;
 use crate::models::exception::{ApiError, ClientError};
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug,)]
 pub struct CliDisplayArg {
     pub no_color: bool,
 }

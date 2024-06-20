@@ -1,4 +1,4 @@
-/*use serde::Serialize;
+use serde::Serialize;
 use thiserror::Error;
 
 #[derive(Error, Clone, Debug, Serialize)]
@@ -264,4 +264,4 @@ pub enum FileUploadStatus {
     Timeout,
     #[serde(rename = "cancelled")]
     Cancelled,
-}*/
+}

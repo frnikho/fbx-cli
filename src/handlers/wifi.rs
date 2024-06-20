@@ -8,9 +8,8 @@ impl Wifi {
     
     pub async fn get(app: &mut App) -> HandlerResult {
         let _session = required_login(app).await?;
-        /*let wifi = app.api.get_wifi_config(&app.client, &session).await?;
-        handler_ok(wifi).await*/
+        //let wifi = app.api.get_wifi_config(&app.client, &session).await?;
         todo!("get wifi handler");
     }
-    
+
 }

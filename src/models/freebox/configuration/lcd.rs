@@ -29,6 +29,7 @@ pub struct LcdUpdateBody {
     pub brightness: Option<u8>,
     pub orientation: Option<u16>,
     pub hide_wifi_key: Option<bool>,
+    pub orientation_forced: Option<bool>,
 }
 
 impl LcdUpdateBody {
@@ -36,7 +37,8 @@ impl LcdUpdateBody {
         Self {
             brightness: Some(brightness),
             orientation: None,
-            hide_wifi_key: None
+            hide_wifi_key: None,
+            orientation_forced: None,
         }
     }
 
@@ -44,7 +46,8 @@ impl LcdUpdateBody {
         Self {
             brightness: None,
             orientation: Some(orientation),
-            hide_wifi_key: None
+            hide_wifi_key: None,
+            orientation_forced: Some(true),
         }
     }
 
@@ -52,7 +55,8 @@ impl LcdUpdateBody {
         Self {
             brightness: None,
             orientation: None,
-            hide_wifi_key: Some(hide)
+            hide_wifi_key: Some(hide),
+            orientation_forced: None
         }
     }
 }

@@ -21,6 +21,8 @@ pub enum ClientError {
     InvalidUrl(&'static str),
     #[error("Authorization required")]
     CliNeedAuth(Option<&'static str>),
+    #[error("Authorization required")]
+    InvalidParameter(&'static str, &'static str),
 }
 
 #[derive(Debug, Clone, PartialEq)]

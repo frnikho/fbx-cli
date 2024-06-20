@@ -4,7 +4,7 @@ use crate::config::{FbxSession};
 use crate::models::args::{AuthLoginArgs, AuthSetUrlArgs};
 use crate::models::exception::ClientError;
 use crate::models::freebox::authorization::{AuthSessionStartRequest, AuthTokenRequest, AuthTokenResult, AuthTrackAuthorizationProgressStatus};
-use crate::services::api::{FreeboxOSApiCalls};
+use crate::services::api::{FreeboxOSCalls, LoginCalls};
 use url::Url;
 use crate::terminal::{handler_result, HandlerResult};
 

@@ -147,7 +147,7 @@ pub enum LanHostL2IdentType {
 
 #[derive(Debug, Clone, Serialize)]
 pub struct UpdateLanHostBody {
-    pub name: Option<String>,
+    pub primary_name: Option<String>,
     pub host_type: Option<LanHostType>,
     pub persistent: Option<bool>,
 }
@@ -235,7 +235,16 @@ impl Display for LanHostType {
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WakeOnLanBody {
     pub mac: String,
-    pub password: Option<String>,
+    pub password: String,
+}
+
+impl WakeOnLanBody {
+    pub fn new(mac: String, password: Option<String>) -> Self {
+        Self {
+            mac,
+            password: password.unwrap_or_default(),
+        }
+    }
 }
 
 pub type ListLanCountResponse = ResponseResult<Vec<LanCount>>;

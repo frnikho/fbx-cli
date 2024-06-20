@@ -1,5 +1,5 @@
-use clap::{ArgAction, Args, Parser, Subcommand};
-use crate::models::freebox::lan::LanHostType;
+use clap::{ArgAction, Args, Parser, Subcommand, ValueEnum};
+use crate::models::freebox::configuration::lan::LanHostType;
 
 #[derive(Parser, Debug, Clone)]
 #[command(name = "fbx")]
@@ -62,7 +62,7 @@ pub enum Commands {
     Info,
     Dhcp {
         #[clap(subcommand)]
-        cmd: DhcpCommands,
+        cmd: DhcpCmds,
     },
     Ftp {
         #[clap(subcommand)]
@@ -84,6 +84,10 @@ pub enum Commands {
     Vpn {
         #[clap(subcommand)]
         cmd: VpnCommands
+    },
+    Switch {
+        #[clap(subcommand)]
+        cmd: SwitchCommands
     },
 }
 
@@ -120,6 +124,30 @@ pub enum LcdCmds {
     },
 }
 
+#[derive(Debug, Clone, ValueEnum)]
+pub enum LcdOrientation {
+    #[clap(name = "normal", aliases = ["0", "base"])]
+    Normal,
+    #[clap(name = "inverse", aliases = ["180"])]
+    Inverse,
+    #[clap(name = "right", aliases = ["90"])]
+    FlipRight,
+    #[clap(name = "left", aliases = ["270"])]
+    FlipLeft,
+}
+
+impl LcdOrientation {
+    pub fn value(&self) -> u16 {
+        match self {
+            LcdOrientation::Normal => 0,
+            LcdOrientation::Inverse => 180,
+            LcdOrientation::FlipRight => 90,
+            LcdOrientation::FlipLeft => 270,
+        }
+    }
+
+}
+
 #[derive(Subcommand, Debug, Clone)]
 pub enum LcdSetCmds {
     #[clap(about = "Set the brightness (0-100)", disable_help_flag = true)]
@@ -127,10 +155,10 @@ pub enum LcdSetCmds {
         #[arg(value_name = "0-100")]
         brightness: u8,
     },
-    #[clap(about = "Set the orientation (0/90/180/270)", disable_help_flag = true)]
+    #[clap(about = "Set the orientation (normal/inverse/left/right)", disable_help_flag = true)]
     Orientation {
-        #[arg(value_name = "0/90/180/270")]
-        orientation: String,
+        #[arg(value_name = "(normal/inverse/left/right)")]
+        orientation: LcdOrientation,
     },
     #[clap(about = "Hide or not the wifi key (true/false)", disable_help_flag = true)]
     HideWifiKey {
@@ -176,6 +204,9 @@ pub struct DeleteVmArgs {
 pub struct InfoVmArgs {
     pub uuid: String,
 }
+/**
+    Init
+**/
 
 #[derive(Args, Debug, Clone)]
 pub struct InitArgs {
@@ -209,11 +240,23 @@ pub struct InitArgs {
     pub device: Option<String>,
 }
 
+/**
+    Device
+**/
+
 #[derive(Subcommand, Debug, Clone)]
 pub enum DevicesCommands {
     List,
     Get(DeviceGetArgs),
-    Update(DeviceUpdateArgs),
+    Set(DeviceUpdateArgs),
+    WakeUp(WakeUpArgs)
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WakeUpArgs {
+    #[arg(alias = "id")]
+    pub name: String,
+    pub password: Option<String>
 }
 
 #[derive(Args, Debug, Clone)]
@@ -228,16 +271,19 @@ pub struct DeviceUpdateArgs {
     #[arg(short, long = "name", help = "Mettre à jour le nom du périphérique")]
     pub new_name: Option<String>,
     #[arg(long = "type", help = "Mettre à jour le type du périphérique")]
-    pub r#type: Option<LanHostType>, //TODO transform to enum
+    pub r#type: Option<LanHostType>,
     #[arg(long = "persistent", help = "Effacer l'appareil s'il n'est pas présent lors du prochain redémarrage de la freebox")]
     pub persistent: Option<bool>,
 }
 
 #[derive(Subcommand, Debug, Clone)]
-pub enum DhcpCommands {
-    #[clap(alias = "info", about = "Get wifi info")]
-    Get,
+pub enum SwitchCommands {
+
 }
+
+/**
+    Wifi
+**/
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum WifiCommands {
@@ -249,13 +295,43 @@ pub enum WifiCommands {
         #[clap(subcommand)]
         cmd: WifiConfigCmds,
     },
-    Filter(WifiFilterArgs),
-    Diag(WifiDiagArgs),
+    MacFilter {
+        #[clap(subcommand)]
+        cmd: WifiMacFilterCmds
+    },
+    Diagnostic(WifiDiagArgs),
     Wps {
         #[clap(subcommand)]
         cmd: WifiWpsCmds,
     },
-    Guest(WifiGuestArgs),
+    Guest {
+        #[clap(subcommand)]
+        cmd: WifiGuestCmds
+    },
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum WifiMacFilterCmds {
+    List,
+    Get(MacFilterArgs),
+    Update(MacFilterUpdateArgs),
+    Delete(MacFilterArgs),
+    Create(MacFilterCreateArgs)
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct MacFilterArgs {
+
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct MacFilterCreateArgs {
+
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct MacFilterUpdateArgs {
+
 }
 
 #[derive(Args, Debug, Clone)]
@@ -292,13 +368,52 @@ pub struct WifiDiagArgs {}
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum WifiWpsCmds {
-    Start,
-    Stop,
+    Start(WifiStartArgs),
+    Stop(WifiStopArgs),
     List,
+    Clear,
 }
 
 #[derive(Args, Debug, Clone)]
-pub struct WifiGuestArgs {}
+pub struct WifiStartArgs {
+
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiStopArgs {
+
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum WifiGuestCmds {
+    Create(WifiGuestCreateArgs),
+    Delete(WifiGuestArgs),
+    List,
+    Get(WifiGuestArgs)
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiGuestArgs {
+    pub name: String,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct WifiGuestCreateArgs {
+    pub name: String,
+    pub key: String,
+    #[arg(long, help = "Durée du wifi", default_value_t = 86400)]
+    pub duration: i32,
+    #[arg(long, help = "Nombre maximum d'utilisations", default_value_t = 100)]
+    pub max_use: i32,
+    #[arg(value_enum, long, help = "Accès au wifi", default_value_t = WifiGuestAccessType::Network)]
+    pub access: WifiGuestAccessType,
+}
+
+#[derive(ValueEnum, Debug, Clone)]
+pub enum WifiGuestAccessType {
+    Full,
+    Network
+}
 
 #[derive(Subcommand, Debug, Clone)]
 pub enum FtpCommands {
@@ -373,5 +488,150 @@ pub enum SystemCommands {
     #[clap(about = "Change/display system language")]
     Language {
 
+    },
+    #[clap(about = "Configuration du File Transfer Protocol")]
+    Ftp {
+        #[clap(subcommand)]
+        cmd: FtpCmds,
     }
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum FtpCmds {
+    #[clap(alias = "update", about = "Mettre à jour les info FTP")]
+    Set(FtpSetArgs),
+    #[clap(alias = "info", about = "Récupérer les info FTP")]
+    Get(FtpGetArgs)
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct FtpGetArgs {
+    
+}
+
+#[derive(Args, Debug, Clone)]
+#[group(required = true)]
+pub struct FtpSetArgs {
+    #[arg(short, long, help = "Activer/désactiver le serveur FTP")]
+    pub enable: Option<bool>,
+    #[arg(short, long, help = "Mettre à jour le mot de passe du serveur FTP")]
+    pub password: Option<String>,
+    #[arg(long = "anonymous", help = "Activer/désactiver l'accès anonyme")]
+    pub anonymous: Option<FtpAnonymousMode>,
+    #[arg(long = "remote", help = "Activer/désactiver l'accès a distance")]
+    pub allow_remote: Option<bool>,
+    #[arg(long, help = "Mettre à jour le port du controle à distance du serveur FTP")]
+    pub remote_port: Option<i32>,
+    #[arg(long, help = "Mettre à jour le port des données du controle à distance du serveur FTP")]
+    pub remote_port_data: Option<i32>,
+    #[arg(long, help = "Mettre à jour le domain du controle à distance du serveur FTP")]
+    pub remote_domain: Option<String>,
+}
+
+#[derive(ValueEnum, Debug, Clone, PartialEq)]
+pub enum FtpAnonymousMode {
+    #[clap(name = "off", aliases = ["false"])]
+    Off,
+    #[clap(name = "on", aliases = ["read"])]
+    Read,
+    #[clap(name = "write", aliases = ["full"])]
+    ReadWrite,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum DhcpCmds {
+    Get(DhcpGetArgs),
+    Set(DhcpSetArgs),
+    Lease {
+        #[clap(subcommand)]
+        cmd: DhcpLeaseCmds,
+    },
+    Dns {
+        #[clap(subcommand)]
+        cmd: DhcpDnsCmds,
+    }
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct DhcpGetArgs {
+    #[arg(short, long, help = "Configuration ipv6 DHCP", default_value = None, action = ArgAction::SetTrue)]
+    pub ipv6: Option<bool>,
+}
+
+#[derive(Args, Debug, Clone)]
+#[group(required = true)]
+pub struct DhcpSetArgs {
+    #[arg(short, long, help = "Configuration ipv6 DHCP", default_value = None, action = ArgAction::SetTrue)]
+    pub ipv6: Option<bool>,
+    pub enable: Option<bool>,
+    pub sticky: Option<bool>,
+    pub ip_start: Option<String>,
+    pub ip_end: Option<String>,
+    pub broadcast: Option<bool>,
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum DhcpLeaseCmds {
+    List(ListLeaseArgs),
+    Get(GetLeaseArgs),
+    Delete(DeleteLeaseArgs),
+    Update(UpdateLeaseArgs),
+    Create(CreateLeaseArgs),
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum DhcpDnsCmds {
+    #[clap(aliases = ["get", "info"])]
+    List(DhcpIpv6Args),
+    Add(DhcpDnsArgs),
+    Set(DhcpDnsArgs),
+    #[clap(aliases = ["delete"])]
+    Remove(DhcpDnsArgs),
+    Clear(DhcpIpv6Args),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct DhcpIpv6Args {
+    #[arg(short, long, help = "Configuration ipv6 DNS", default_value = None, action = ArgAction::SetTrue)]
+    pub ipv6: Option<bool>
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct DhcpDnsArgs {
+    #[arg(value_delimiter = ' ', required = true)]
+    pub dns: Vec<String>,
+    #[arg(short, long, help = "Configuration ipv6 DNS", default_value = None, action = ArgAction::SetTrue)]
+    pub ipv6: Option<bool>
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct ListLeaseArgs {
+    #[arg(short, long, help = "Affiche les leases dynamiques", default_value = None, action = ArgAction::SetTrue)]
+    pub dynamic: Option<bool>
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct DeleteLeaseArgs {
+    pub lease: String,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct UpdateLeaseArgs {
+    pub lease: String,
+    pub comment: Option<String>,
+    pub ip: Option<String>,
+    pub mac: Option<String>,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct CreateLeaseArgs {
+    pub lease: String,
+    pub ip: String,
+    pub mac: String,
+    pub comment: Option<String>,
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct GetLeaseArgs {
+    pub lease: String,
 }

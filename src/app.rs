@@ -1,10 +1,8 @@
 use std::fmt::Display;
 use crate::client::ReqwestClient;
 use crate::config::FbxConfig;
-use crate::models::args::Cli;
 use crate::models::freebox::authorization::AuthTokenRequest;
 use crate::services::api::FreeboxOSApi;
-use clap::Parser;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use url::Url;
@@ -15,7 +13,6 @@ pub struct App {
     pub api: FreeboxOSApi,
     pub config: FbxConfig,
     pub client: ReqwestClient,
-    pub cli: Cli,
 }
 
 impl Default for App {
@@ -24,7 +21,6 @@ impl Default for App {
             api: FreeboxOSApi,
             config: FbxConfig::load(),
             client: ReqwestClient::default(),
-            cli: Cli::parse(),
         }
     }
 }
@@ -65,15 +61,17 @@ impl From<AuthAppConfig> for AuthTokenRequest {
 pub struct ResponseResult<T> {
     pub success: bool,
     pub message: Option<String>,
+    pub error_code: Option<String>,
     pub result: Option<T>,
 }
 
 impl<T> ResponseResult<T> {
-    pub fn new(success: bool, message: Option<String>, result: Option<T>) -> Self {
+    pub fn new(success: bool, message: Option<String>, result: Option<T>, error_code: Option<String>) -> Self {
         ResponseResult {
             success,
             message,
             result,
+            error_code
         }
     }
 }

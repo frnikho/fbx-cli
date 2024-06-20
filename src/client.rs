@@ -43,7 +43,7 @@ impl Default for ReqwestClient {
     fn default() -> Self {
         Self {
             client: reqwest::Client::default(),
-            base_url: "https://mafreebox.freebo.fr/v1".to_string(),
+            base_url: "https://mafreebox.freebox.fr/v1".to_string(),
             timeout: 5,
         }
     }
@@ -119,7 +119,6 @@ impl HttpClient for ReqwestClient {
         if let Some(headers) = headers {
             builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, *v));
         }
-
         let response = builder.send().await?;
         let txt = response.text().await?;
         //println!("{:?}", txt.clone());

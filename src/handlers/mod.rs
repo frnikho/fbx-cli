@@ -9,6 +9,5 @@ pub mod wifi;
 pub mod lcd;
 pub mod nat;
 pub mod dhcp;
-pub mod ftp;
 pub mod port;
 pub mod file;

@@ -1,12 +1,14 @@
 #![allow(dead_code)]
 
+use clap::Parser;
 use crate::app::App;
 use crate::handlers::auth::Auth;
 use crate::handlers::device::Device;
+use crate::handlers::dhcp::Dhcp;
 use crate::handlers::lcd::Lcd;
 use crate::handlers::system::System;
 use crate::handlers::vm::Vm;
-use crate::models::args::{AuthCommands, Commands, DevicesCommands, LcdCmds, LcdSetCmds, SystemCommands, VmSubCommands};
+use crate::models::args::{AuthCommands, Cli, Commands, DevicesCommands, DhcpCmds, DhcpDnsCmds, DhcpLeaseCmds, FtpCmds, LcdCmds, LcdSetCmds, SystemCommands, VmSubCommands, WifiCommands, WifiGuestCmds, WifiMacFilterCmds, WifiWpsCmds};
 use crate::models::exception::ClientError;
 use crate::terminal::{CliDisplayArg};
 
@@ -21,8 +23,9 @@ mod terminal;
 #[tokio::main]
 async fn main() -> Result<(), std::io::Error> {
     let mut app = App::default();
+    let cli = Cli::parse();
     app.initialize().await;
-    let a = match app.cli.cmd.clone() {
+    let a = match cli.cmd {
         Commands::Lcd { cmd} => match cmd {
             LcdCmds::Get => Lcd::get(&mut app).await,
             LcdCmds::Set { cmd } => match cmd {
@@ -38,7 +41,8 @@ async fn main() -> Result<(), std::io::Error> {
         Commands::Device { cmd } => match cmd {
             DevicesCommands::List => Device::list(&mut app).await,
             DevicesCommands::Get(args) => Device::get_device(&mut app, &args).await,
-            DevicesCommands::Update(args) => Device::update(&mut app, args).await,
+            DevicesCommands::Set(args) => Device::update(&mut app, args).await,
+            DevicesCommands::WakeUp(args) => Device::wak_on_lan(&mut app, args).await,
         },
         Commands::Auth { cmd } => match cmd {
             AuthCommands::Status => Auth::status(&mut app).await,
@@ -52,7 +56,52 @@ async fn main() -> Result<(), std::io::Error> {
             SystemCommands::Get => System::get(&mut app).await,
             SystemCommands::Update => System::get_update_status(&mut app).await,
             SystemCommands::Language {..} => todo!(),
+            SystemCommands::Ftp {cmd} => match cmd {
+                FtpCmds::Get(args) => System::get_ftp_config(&mut app, args).await,
+                FtpCmds::Set(args) => System::update_ftp_config(&mut app, args).await,
+            },
         },
+        Commands::Dhcp {cmd} => match cmd {
+            DhcpCmds::Get(args) => Dhcp::get_config(&mut app, args).await,
+            DhcpCmds::Set(args) => Dhcp::update_config(&mut app, args).await,
+            DhcpCmds::Lease{cmd} => match cmd {
+                DhcpLeaseCmds::List(args) => Dhcp::list_lease(&mut app, args).await,
+                DhcpLeaseCmds::Get(args) => Dhcp::get_lease(&mut app, args).await,
+                DhcpLeaseCmds::Create(args) => Dhcp::add_lease(&mut app, args).await,
+                DhcpLeaseCmds::Update(args) => Dhcp::update_lease(&mut app, args).await,
+                DhcpLeaseCmds::Delete(args) => Dhcp::delete_lease(&mut app, args).await,
+            },
+            DhcpCmds::Dns {cmd} => match cmd {
+                DhcpDnsCmds::List(args) => Dhcp::list_dns(&mut app, args).await,
+                DhcpDnsCmds::Set(args) => Dhcp::set_dns(&mut app, args).await,
+                DhcpDnsCmds::Add(args) => Dhcp::add_dns(&mut app, args).await,
+                DhcpDnsCmds::Remove(args) => Dhcp::remove_dns(&mut app, args).await,
+                DhcpDnsCmds::Clear(args) => Dhcp::clean_dns(&mut app, args).await,
+            }
+        }
+        Commands::Wifi {cmd} => match cmd {
+            WifiCommands::Guest {cmd} => match cmd {
+                WifiGuestCmds::List => todo!(),
+                WifiGuestCmds::Get(_args) => todo!(),
+                WifiGuestCmds::Create(_args) => todo!(),
+                WifiGuestCmds::Delete(_args) => todo!(),
+            },
+            WifiCommands::Wps {cmd} => match cmd {
+                WifiWpsCmds::List => todo!(),
+                WifiWpsCmds::Start(_args) => todo!(),
+                WifiWpsCmds::Stop(_args) => todo!(),
+                WifiWpsCmds::Clear => todo!(),
+            }
+            WifiCommands::Diagnostic(_args) => todo!(),
+            WifiCommands::MacFilter {cmd} => match cmd {
+                WifiMacFilterCmds::List => todo!(),
+                WifiMacFilterCmds::Get(_args) => todo!(),
+                WifiMacFilterCmds::Create(_args) => todo!(),
+                WifiMacFilterCmds::Delete(_args) => todo!(),
+                WifiMacFilterCmds::Update(_args) => todo!(),
+            }
+            _ => todo!()
+        }
         Commands::Info => {
             println!("{:?}", app);
             println!(
