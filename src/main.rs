@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use anyhow::anyhow;
 use clap::Parser;
 use crate::app::App;
 use crate::handlers::auth::Auth;
@@ -8,7 +9,8 @@ use crate::handlers::dhcp::Dhcp;
 use crate::handlers::lcd::Lcd;
 use crate::handlers::system::System;
 use crate::handlers::vm::Vm;
-use crate::models::args::{AuthCommands, Cli, Commands, DevicesCommands, DhcpCmds, DhcpDnsCmds, DhcpLeaseCmds, FtpCmds, LcdCmds, LcdSetCmds, SystemCommands, VmSubCommands, WifiCommands, WifiGuestCmds, WifiMacFilterCmds, WifiWpsCmds};
+use crate::handlers::wifi::Wifi;
+use crate::models::args::{AuthCommands, Cli, Commands, DevicesCommands, DhcpCmds, DhcpDnsCmds, DhcpLeaseCmds, FtpCmds, LanguageCmds, LcdCmds, LcdSetCmds, SystemCommands, VmSubCommands, WifiCommands, WifiConfigCmds, WifiGuestCmds, WifiMacFilterCmds, WifiWpsCmds};
 use crate::models::exception::ClientError;
 use crate::terminal::{CliDisplayArg};
 
@@ -21,7 +23,7 @@ mod services;
 mod terminal;
 
 #[tokio::main]
-async fn main() -> Result<(), std::io::Error> {
+async fn main() -> Result<(), anyhow::Error> {
     let mut app = App::default();
     let cli = Cli::parse();
     app.initialize().await;
@@ -55,7 +57,10 @@ async fn main() -> Result<(), std::io::Error> {
             SystemCommands::Shutdown => System::shutdown(&mut app).await,
             SystemCommands::Get => System::get(&mut app).await,
             SystemCommands::Update => System::get_update_status(&mut app).await,
-            SystemCommands::Language {..} => todo!(),
+            SystemCommands::Language {cmd} => match cmd {
+                LanguageCmds::Get => System::get_language(&mut app).await,
+                LanguageCmds::Set(args) => System::update_language(&mut app, &args.lang).await,
+            },
             SystemCommands::Ftp {cmd} => match cmd {
                 FtpCmds::Get(args) => System::get_ftp_config(&mut app, args).await,
                 FtpCmds::Set(args) => System::update_ftp_config(&mut app, args).await,
@@ -100,7 +105,14 @@ async fn main() -> Result<(), std::io::Error> {
                 WifiMacFilterCmds::Delete(_args) => todo!(),
                 WifiMacFilterCmds::Update(_args) => todo!(),
             }
-            _ => todo!()
+            WifiCommands::QrCode(args) => Wifi::get_qr_code(&mut app, args).await,
+            WifiCommands::Planning(_args) => todo!(),
+            WifiCommands::Get(args) => Wifi::list_wifi(&mut app, args).await,
+            WifiCommands::Scan(_args) => todo!(),
+            WifiCommands::Config {cmd} => match cmd {
+                WifiConfigCmds::Reset(_args) => todo!(),
+                WifiConfigCmds::Set => todo!(),
+            }
         }
         Commands::Info => {
             println!("{:?}", app);
@@ -115,8 +127,16 @@ async fn main() -> Result<(), std::io::Error> {
     .map_err(|x| {
         println!("{:?}", x);
     }).unwrap();
-    println!("{}", a.json());
-    println!("{}", a.stdout(CliDisplayArg { no_color: false}));
-    app.save();
-    Ok(())
+    let result = a.stdout(CliDisplayArg::default());
+    println!("Result: \n{}\n", result);
+
+    let raw_result = a.raw(CliDisplayArg::default());
+    println!("Raw Result: \n{}\n", raw_result);
+
+    let json_result = a.json();
+    println!("Json Result: \n{}", json_result);
+    match result.code {
+        terminal::CliResultCode::Success => Ok(()),
+        terminal::CliResultCode::Error => Err(anyhow!("abc")),
+    }
 }

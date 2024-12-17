@@ -2,6 +2,7 @@ use crate::app::{App};
 use crate::handlers::auth::required_login;
 use crate::models::args::{FtpGetArgs, FtpSetArgs};
 use crate::models::freebox::configuration::ftp::{FtpCalls, FtpConfigBody};
+use crate::models::freebox::language::LanguageSupportUpdateBody;
 use crate::services::api::{FreeboxOSCalls, SystemCalls};
 use crate::terminal::{handler_result, HandlerResult};
 
@@ -49,4 +50,15 @@ impl System {
         let session = required_login(app).await?;
         handler_result(app.api.update_ftp_config(&app.client, &session, FtpConfigBody::from(args))).await
     }
+    
+    pub async fn get_language(app: &mut App) -> HandlerResult {
+        let session = required_login(app).await?;
+        handler_result(app.api.get_language(&app.client, &session)).await
+    }
+    
+    pub async fn update_language(app: &mut App, lang: &String) -> HandlerResult {
+        let session = required_login(app).await?;
+        handler_result(app.api.set_language(&app.client, &session, LanguageSupportUpdateBody {lang: lang.clone()})).await
+    }
+    
 }

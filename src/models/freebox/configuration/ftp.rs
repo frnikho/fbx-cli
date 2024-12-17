@@ -1,10 +1,9 @@
-use std::fmt::Display;
 use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use crate::client::HttpClient;
 use crate::models::args::{FtpAnonymousMode, FtpSetArgs};
-use crate::terminal::{CliDisplay, CliDisplayArg};
+use crate::terminal::{CliDisplay, CliDisplayArg, CliResult};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum FTPError {
@@ -25,6 +24,30 @@ pub struct FtpConfig {
     pub port_ctrl: i32,
     pub port_data: i32,
     pub remote_domain: String,
+}
+
+impl CliDisplay for FtpConfig {
+    fn json(&self) -> Value {
+        json!(self)
+    }
+
+    fn stdout(&self, _arg: CliDisplayArg) -> CliResult {
+        let mut s = String::from("FTP configuration:\n");
+        s.push_str(&format!("Enabled: {}\n", self.enabled));
+        s.push_str(&format!("Allow anonymous: {}\n", self.allow_anonymous));
+        s.push_str(&format!("Allow anonymous write: {}\n", self.allow_anonymous_write));
+        s.push_str(&format!("Username: {}\n", self.username));
+        s.push_str(&format!("Allow remote access: {}\n", self.allow_remote_access));
+        s.push_str(&format!("Weak password: {}\n", self.weak_password));
+        s.push_str(&format!("Control port: {}\n", self.port_ctrl));
+        s.push_str(&format!("Data port: {}\n", self.port_data));
+        s.push_str(&format!("Remote domain: {}\n", self.remote_domain));
+        CliResult::success(Box::new(s))
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        todo!()
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -54,31 +77,58 @@ impl From<FtpSetArgs> for FtpConfigBody {
     }
 }
 
-pub type FtpConfigResponse = ResponseResult<FtpConfig>;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct FtpConfigResponse(pub ResponseResult<FtpConfig>);
 
 impl CliDisplay for FtpConfigResponse {
     fn json(&self) -> Value {
-        json!(self.result)
+        match &self.0.result {
+            Some(x) => x.json(),
+            None => json!({}),
+        }
     }
 
-    fn stdout(&self, _arg: CliDisplayArg) -> Box<dyn Display> {
-        let ftp = self.result.as_ref().unwrap();
-        let mut s = String::from("FTP configuration:\n");
-        s.push_str(&format!("Enabled: {}\n", ftp.enabled));
-        s.push_str(&format!("Allow anonymous: {}\n", ftp.allow_anonymous));
-        s.push_str(&format!("Allow anonymous write: {}\n", ftp.allow_anonymous_write));
-        s.push_str(&format!("Username: {}\n", ftp.username));
-        s.push_str(&format!("Allow remote access: {}\n", ftp.allow_remote_access));
-        s.push_str(&format!("Weak password: {}\n", ftp.weak_password));
-        s.push_str(&format!("Control port: {}\n", ftp.port_ctrl));
-        s.push_str(&format!("Data port: {}\n", ftp.port_data));
-        s.push_str(&format!("Remote domain: {}\n", ftp.remote_domain));
-        Box::new(s)
+    fn stdout(&self, arg: CliDisplayArg) -> CliResult {
+        match &self.0.result {
+            Some(x) => x.stdout(arg),
+            None => CliResult::success(Box::new("No FTP configuration found")),
+        }
     }
 
+    fn raw(&self, arg: CliDisplayArg) -> CliResult {
+        match &self.0.result {
+            Some(x) => x.raw(arg),
+            None => CliResult::success(Box::new("No FTP configuration found")),
+        }
+    }
 }
 
-pub type UpdateFtpConfigResponse = ResponseResult<FtpConfig>;
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct UpdateFtpConfigResponse(pub ResponseResult<FtpConfig>);
+
+impl CliDisplay for UpdateFtpConfigResponse {
+    fn json(&self) -> Value {
+        match &self.0.result {
+            Some(x) => x.json(),
+            None => json!({}),
+        }
+    }
+
+    fn stdout(&self, arg: CliDisplayArg) -> CliResult {
+        match &self.0.result {
+            Some(x) => x.stdout(arg),
+            None => CliResult::success(Box::new("No FTP configuration found")),
+        }
+    }
+
+    fn raw(&self, arg: CliDisplayArg) -> CliResult {
+        match &self.0.result {
+            Some(x) => x.raw(arg),
+            None => CliResult::success(Box::new("No FTP configuration found")),
+        }
+    }
+}
 
 pub trait FtpCalls<T: HttpClient> {
     async fn get_ftp_config(&self, client: &T, session: &str) -> Result<FtpConfigResponse, T::Error>;

@@ -1,11 +1,10 @@
-use std::fmt::Display;
 use crate::app::{ResponseResult, SuccessResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use thiserror::Error;
 use crate::models::args::{CreateLeaseArgs, DhcpSetArgs, UpdateLeaseArgs};
 use crate::models::freebox::configuration::lan::LanHost;
-use crate::terminal::{CliDisplay, CliDisplayArg};
+use crate::terminal::{CliDisplay, CliDisplayArg, CliResult};
 
 #[derive(Debug, Clone, Deserialize)]
 pub enum DHCPError {
@@ -98,8 +97,12 @@ impl CliDisplay for DHCPDns {
         json!(self.0.dns)
     }
 
-    fn stdout(&self, _arg: CliDisplayArg) -> Box<dyn Display> {
-        Box::new(self.0.dns.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("\n"))
+    fn stdout(&self, _arg: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new(self.0.dns.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("\n")))
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        todo!()
     }
 }
 
@@ -108,8 +111,12 @@ impl CliDisplay for DHCPv6Dns {
         json!(self.0.dns)
     }
 
-    fn stdout(&self, _arg: CliDisplayArg) -> Box<dyn Display> {
-        Box::new(self.0.dns.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("\n"))
+    fn stdout(&self, _arg: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new(self.0.dns.iter().map(|x| x.to_string()).collect::<Vec<String>>().join("\n")))
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        todo!()
     }
 }
 
@@ -198,7 +205,11 @@ impl CliDisplay for DHCPConfigResponse {
         todo!()
     }
 
-    fn stdout(&self, _arg: CliDisplayArg) -> Box<dyn Display> {
+    fn stdout(&self, _arg: CliDisplayArg) -> CliResult {
+        todo!()
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
         todo!()
     }
 }
@@ -210,7 +221,11 @@ impl CliDisplay for DHCPv6ConfigResponse {
         todo!()
     }
 
-    fn stdout(&self, _arg: CliDisplayArg) -> Box<dyn Display> {
+    fn stdout(&self, _arg: CliDisplayArg) -> CliResult {
+        todo!()
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
         todo!()
     }
 }

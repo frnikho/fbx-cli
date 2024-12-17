@@ -1,8 +1,9 @@
-use std::fmt::Display;
+use comfy_table::{Table};
 use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use crate::terminal::{CliDisplay, CliDisplayArg};
+use crate::models::display::TableDisplay;
+use crate::terminal::{CliDisplay, CliDisplayArg, CliResult};
 
 #[derive(Clone, Debug, Deserialize, Serialize)]
 pub struct LcdInfoResult {
@@ -10,6 +11,15 @@ pub struct LcdInfoResult {
     pub orientation_forced: bool,
     pub orientation: i32,
     pub hide_wifi_key: bool,
+}
+
+impl LcdInfoResult {
+    pub fn hide_wifi_key_to_str(&self) -> &str {
+        match self.hide_wifi_key {
+            true => "Oui",
+            false => "Non",
+        }
+    }
 }
 
 #[derive(Clone, Debug, Deserialize)]
@@ -68,15 +78,29 @@ impl CliDisplay for LcdInfoResponse {
         json!(self.result)
     }
 
-    fn stdout(&self, _arg: CliDisplayArg) -> Box<dyn Display> {
+    fn stdout(&self, _: CliDisplayArg) -> CliResult {
         match &self.result {
-            Some(res) => {
-                Box::new(format!(
-                    "Brightness: {}\nOrientation: {}\nHide Wifi Key: {}",
-                    res.brightness, res.orientation, res.hide_wifi_key
-                ))
-            }
-            None => Box::new("Error"),
+            Some(result) => {
+                let mut table = Table::init();
+                table.set_headers(vec![
+                    "Luminosité",
+                    "Orientation de l'écran",
+                    "Clé wifi caché",
+                ]);
+                table.rows(vec![format!("{}%", result.brightness), format!("{}°", result.orientation), result.hide_wifi_key_to_str().to_string()]);
+                CliResult::success(Box::new(table))
+            },
+            None => CliResult::error(Box::new("No data")),
+        }
+        
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        match &self.result {
+            Some(result) => {
+                CliResult::success(Box::new(format!("Luminosité: {}%\nOrientation de l'écran: {}°\nClé wifi caché: {}", result.brightness, result.orientation, result.hide_wifi_key_to_str())))
+            },
+            None => CliResult::error(Box::new("No data")),
         }
     }
 }

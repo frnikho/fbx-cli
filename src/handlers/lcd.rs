@@ -1,6 +1,6 @@
 use crate::app::App;
 use crate::handlers::auth::required_login;
-use crate::models::args::LcdOrientation;
+use crate::models::args::{LcdOrientation, YesOrNot};
 use crate::models::freebox::configuration::lcd::LcdUpdateBody;
 use crate::services::api::LcdCalls;
 use crate::terminal::{handler_result, HandlerResult};
@@ -24,9 +24,9 @@ impl Lcd {
         handler_result(app.api.update_lcd_info(&app.client, &session, LcdUpdateBody::orientation(orientation.value()))).await //TODO: remove forced value
     }
 
-    pub async fn hide_password(app: &mut App, _hide: String) -> HandlerResult {
+    pub async fn hide_password(app: &mut App, hide: YesOrNot) -> HandlerResult {
         let session = required_login(app).await?;
-        handler_result(app.api.update_lcd_info(&app.client, &session, LcdUpdateBody::hide_wifi_key(false))).await //TODO: remove forced value
+        handler_result(app.api.update_lcd_info(&app.client, &session, LcdUpdateBody::hide_wifi_key(hide.value()))).await //TODO: remove forced value
     }
 }
 

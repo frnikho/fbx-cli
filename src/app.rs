@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use crate::client::ReqwestClient;
 use crate::config::FbxConfig;
 use crate::models::freebox::authorization::AuthTokenRequest;
@@ -6,7 +5,7 @@ use crate::services::api::FreeboxOSApi;
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
 use url::Url;
-use crate::terminal::{CliDisplay, CliDisplayArg};
+use crate::terminal::{CliDisplay, CliDisplayArg, CliResult};
 
 #[derive(Clone, Debug)]
 pub struct App {
@@ -86,9 +85,33 @@ impl CliDisplay for SuccessResponse {
         json!(self)
     }
 
-    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
-        Box::new("Reboot request sent 🚀")
+    fn stdout(&self, _: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new(format!("L'opération a {}.", match self.success {
+            true => "réussi",
+            false => "échoué"
+        })))
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new(format!("L'opération a {}.", match self.success {
+            true => "réussi",
+            false => "échoué"
+        })))
     }
 }
 
 pub type EmptyResponse = ();
+
+impl CliDisplay for EmptyResponse {
+    fn json(&self) -> Value {
+        json!(r#"{"success": true}"#)
+    }
+
+    fn stdout(&self, _: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new("L'opération a réussi."))
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new("L'opération a réussi."))
+    }
+}

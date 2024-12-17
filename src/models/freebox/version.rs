@@ -20,11 +20,12 @@ pub enum FreeboxMajorVersion {
     V5,
     V6,
     V7,
-    #[default]
     V8,
     V9,
     V10,
     V11,
+    #[default]
+    LATEST,
 }
 
 impl FreeboxMajorVersion {
@@ -57,6 +58,7 @@ impl From<String> for FreeboxMajorVersion {
             v if v == "v9" => FreeboxMajorVersion::V9,
             v if v == "v10" => FreeboxMajorVersion::V10,
             v if v == "v11" => FreeboxMajorVersion::V11,
+            v if v == "latest" => FreeboxMajorVersion::LATEST,
             _ => FreeboxMajorVersion::V11,
         }
     }
@@ -76,6 +78,7 @@ impl Display for FreeboxMajorVersion {
             FreeboxMajorVersion::V9 => "v9".to_string(),
             FreeboxMajorVersion::V10 => "v10".to_string(),
             FreeboxMajorVersion::V11 => "v11".to_string(),
+            FreeboxMajorVersion::LATEST => "latest".to_string(),
         };
         write!(f, "{}", str)
     }

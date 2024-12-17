@@ -1,8 +1,10 @@
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
+use serde_json::{Value};
 use crate::app::{ResponseResult, SuccessResponse};
 use crate::client::HttpClient;
 use crate::models::freebox::configuration::lan::LanHost;
 use crate::models::freebox::wifi::global::{ExpectedPhyBand};
+use crate::terminal::{CliDisplay, CliDisplayArg, CliResult};
 
 #[derive(Debug, Clone, Deserialize)]
 pub enum WifiApStatusState {
@@ -35,13 +37,13 @@ pub enum WifiApStatusState {
 #[derive(Debug, Clone, Deserialize)]
 pub struct WifiApCapabilities {
     #[serde(rename = "2d4g")]
-    pub b2d4g: i32,
+    pub b2d4g: Value,
     #[serde(rename = "5g")]
-    pub b5g: i32,
+    pub b5g: Value,
     #[serde(rename = "6g")]
-    pub b6g: i32,
+    pub b6g: Value,
     #[serde(rename = "60g")]
-    pub b60g: i32,
+    pub b60g: Value,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -61,7 +63,7 @@ pub struct WifiAp {
     pub config: WifiApConfig,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WifiApBody {
     pub config: WifiApConfig,
 }
@@ -76,21 +78,21 @@ pub struct WifiApStatus {
     pub dfs_disabled: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WifiApHtConfig {
     pub ac_enabled: bool,
     pub ht_enabled: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WifiApHeConfig {
     pub enabled: bool,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct WifiApConfig {
     pub band: ExpectedPhyBand,
-    pub channel_width: i32,
+    pub channel_width: String,
     pub primary_channel: i32,
     pub secondary_channel: i32,
     pub dfs_enabled: bool,
@@ -174,28 +176,63 @@ pub struct WifiChannelUsage {
     pub rx_busy_percent: i32,
 }
 
-pub type ListWifiChannelUsage = ResponseResult<Vec<WifiChannelUsage>>;
+#[derive(Debug, Clone, Deserialize)]
+pub struct ListWifiChannelUsage(pub ResponseResult<Vec<WifiChannelUsage>>);
 
-pub type GetWifiApResponse = ResponseResult<WifiAp>;
-pub type UpdateWifiApResponse = ResponseResult<WifiAp>;
-pub type ListWifiApResponse = ResponseResult<Vec<WifiAp>>;
+#[derive(Debug, Clone, Deserialize)]
+pub struct GetWifiApResponse(pub ResponseResult<WifiAp>);
 
-pub type GetWifiAllowedCombResponse = ResponseResult<Vec<WifiAllowedComb>>;
+#[derive(Debug, Clone, Deserialize)]
+pub struct UpdateWifiApResponse(pub ResponseResult<WifiAp>);
 
-pub type GetWifiStationsResponse = ResponseResult<WifiStation>;
-pub type ListWifiStationsResponse = ResponseResult<Vec<WifiStation>>;
+#[derive(Debug, Clone, Deserialize)]
+pub struct ListWifiApResponse(pub ResponseResult<Vec<WifiAp>>);
 
-pub type ListWifiApChannelSurveyResponse = ResponseResult<Vec<WifiApChannelSurveyData>>;
+impl CliDisplay for ListWifiApResponse {
+    fn json(&self) -> Value {
+        todo!()
+    }
 
-pub type RestartWifiApResponse = SuccessResponse;
+    fn stdout(&self, _: CliDisplayArg) -> CliResult {
+        match &self.0.result {
+            Some(result) => {
+                for ap in result {
+                    println!("{}: {}", ap.id, ap.name);
+                }
+            },
+            None => {
+                println!("No access points found.");
+            }
+        }
+        todo!()
+    }
 
-pub type GetWifiApDefaultConfigResponse = ResponseResult<WifiApConfig>;
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        todo!()
+    }
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GetWifiAllowedCombResponse (pub ResponseResult<Vec<WifiAllowedComb>>);
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct GetWifiStationsResponse(pub ResponseResult<WifiStation>);
+#[derive(Debug, Clone, Deserialize)]
+pub struct ListWifiStationsResponse(pub ResponseResult<Vec<WifiStation>>);
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct ListWifiApChannelSurveyResponse(pub ResponseResult<Vec<WifiApChannelSurveyData>>);
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct RestartWifiApResponse(pub SuccessResponse);
+#[derive(Debug, Clone, Deserialize)]
+pub struct GetWifiApDefaultConfigResponse(pub ResponseResult<WifiApConfig>);
 
 pub trait WifiApCalls<T: HttpClient> {
     async fn list_wifi_access_points(&self, client: &T, session: &str) -> Result<ListWifiApResponse, T::Error>;
     async fn get_wifi_access_point(&self, client: &T, session: &str, ap_id: &str) -> Result<GetWifiApResponse, T::Error>;
     async fn update_wifi_access_point(&self, client: &T, session: &str, ap_id: &str, body: WifiApBody) -> Result<GetWifiApResponse, T::Error>;
-    async fn get_wifi_access_point_allowed_comb(&self, client: &T, session: &str, ap_id: &str) -> Result<GetWifiAllowedCombResponse, T::Error>;
+    async fn get_wifi_access_point_allowed_channels(&self, client: &T, session: &str, ap_id: &str) -> Result<GetWifiAllowedCombResponse, T::Error>;
     async fn list_wifi_access_point_stations(&self, client: &T, session: &str, ap_id: &str) -> Result<ListWifiStationsResponse, T::Error>;
     async fn get_wifi_access_point_station(&self, client: &T, session: &str, ap_id: &str, station_mac: &str) -> Result<GetWifiStationsResponse, T::Error>;
     async fn get_wifi_access_point_channel_survey_history(&self, client: &T, session: &str, ap_id: &str, timestamp: i32) -> Result<ListWifiApChannelSurveyResponse, T::Error>;

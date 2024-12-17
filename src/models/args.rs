@@ -39,6 +39,7 @@ pub enum Commands {
         #[clap(subcommand)]
         cmd: VmSubCommands,
     },
+    #[clap(aliases = ["devices"])]
     Device {
         #[clap(subcommand)]
         cmd: DevicesCommands,
@@ -136,6 +137,23 @@ pub enum LcdOrientation {
     FlipLeft,
 }
 
+#[derive(Debug, Clone, ValueEnum)]
+pub enum YesOrNot {
+    #[clap(name = "yes", aliases = ["oui", "true"])]
+    Yes,
+    #[clap(name = "no", aliases = ["non", "false"])]
+    No,
+}
+
+impl YesOrNot {
+    pub fn value(&self) -> bool {
+        match self {
+            YesOrNot::Yes => true,
+            YesOrNot::No => false,
+        }
+    }
+}
+
 impl LcdOrientation {
     pub fn value(&self) -> u16 {
         match self {
@@ -160,10 +178,10 @@ pub enum LcdSetCmds {
         #[arg(value_name = "(normal/inverse/left/right)")]
         orientation: LcdOrientation,
     },
-    #[clap(about = "Hide or not the wifi key (true/false)", disable_help_flag = true)]
+    #[clap(about = "Hide or not the Wi-Fi key (true/false)", disable_help_flag = true)]
     HideWifiKey {
-        #[arg(value_name = "TRUE/FALSE")]
-        hide: String,
+        #[arg(value_name = "oui/non")]
+        hide: YesOrNot,
     },
 }
 
@@ -341,7 +359,10 @@ pub struct WifiGetArgs {}
 pub struct WifiScanArgs {}
 
 #[derive(Args, Debug, Clone)]
-pub struct WifiQrCodeArgs {}
+pub struct WifiQrCodeArgs {
+    #[arg(help = "Interface wifi")]
+    pub id: String,
+}
 
 #[derive(Args, Debug, Clone)]
 pub struct WifiPlanningArgs {}
@@ -487,13 +508,27 @@ pub enum SystemCommands {
     Update,
     #[clap(about = "Change/display system language")]
     Language {
-
+        #[clap(subcommand)]
+        cmd: LanguageCmds,
     },
     #[clap(about = "Configuration du File Transfer Protocol")]
     Ftp {
         #[clap(subcommand)]
         cmd: FtpCmds,
     }
+}
+
+#[derive(Subcommand, Debug, Clone)]
+pub enum LanguageCmds {
+    #[clap(alias = "info", about = "Récupérer la langue actuelle")]
+    Get,
+    #[clap(alias = "update", about = "Mettre à jour la langue actuelle")]
+    Set(LanguageSetArgs),
+}
+
+#[derive(Args, Debug, Clone)]
+pub struct LanguageSetArgs {
+    pub lang: String,
 }
 
 #[derive(Subcommand, Debug, Clone)]
@@ -506,7 +541,7 @@ pub enum FtpCmds {
 
 #[derive(Args, Debug, Clone)]
 pub struct FtpGetArgs {
-    
+    pub language: String,
 }
 
 #[derive(Args, Debug, Clone)]

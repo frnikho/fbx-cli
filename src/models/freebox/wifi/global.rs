@@ -70,7 +70,7 @@ pub enum WifiGlobalStateKind {
     DisabledPlanning,
 }
 
-#[derive(Debug, Clone, Deserialize)]
+#[derive(Debug, Clone, Deserialize, Serialize)]
 pub enum ExpectedPhyBand {
     #[serde(rename = "2d4g")]
     Band2d4g,

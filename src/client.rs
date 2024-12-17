@@ -4,6 +4,7 @@ use reqwest::Response;
 use serde::de::DeserializeOwned;
 use serde::Serialize;
 use std::collections::HashMap;
+use std::fmt::Debug;
 
 /// HttpClient trait is used to represent the http client
 pub trait HttpClient {
@@ -22,7 +23,7 @@ pub trait HttpClient {
     async fn put<T: DeserializeOwned>(
         &self,
         url: &str,
-        body: Option<impl Serialize>,
+        body: Option<impl Serialize + Debug>,
         headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error>;
     async fn delete<T: DeserializeOwned>(
@@ -128,7 +129,7 @@ impl HttpClient for ReqwestClient {
     async fn put<T: DeserializeOwned>(
         &self,
         url: &str,
-        body: Option<impl Serialize>,
+        body: Option<impl Serialize + Debug>,
         headers: Option<HashMap<String, &str>>,
     ) -> Result<T, Self::Error> {
         let mut builder = self
@@ -139,7 +140,12 @@ impl HttpClient for ReqwestClient {
         if let Some(headers) = headers {
             builder = headers.iter().fold(builder, |acc, (k, v)| acc.header(k, *v));
         }
-        Ok(builder.send().await?.json::<T>().await?)
+
+        let response = builder.send().await?;
+        let txt = response.text().await?;
+        //println!("{:?}", body.unwrap());
+        //println!("{:?}", txt.clone());
+        Ok(serde_json::from_str(txt.as_str()).unwrap())
     }
 
     async fn delete<T: DeserializeOwned>(

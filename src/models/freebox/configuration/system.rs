@@ -1,8 +1,7 @@
-use std::fmt::Display;
 use crate::app::{EmptyResponse, ResponseResult, SuccessResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use crate::terminal::{CliDisplay, CliDisplayArg};
+use crate::terminal::{CliDisplay, CliDisplayArg, CliResult};
 
 pub type SystemInfoResult = ResponseResult<SystemInfo>;
 
@@ -156,22 +155,31 @@ impl CliDisplay for GetSystemInfoRequest {
         json!(self.clone().result)
     }
 
-    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
-        Box::new("System info")
+    fn stdout(&self, _: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new("System info"))
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        todo!()
     }
 }
 
 pub type RebootRequest = SuccessResponse;
 
-pub type ShutdownRequest = EmptyResponse;
+#[derive(Clone, Debug, Deserialize, Serialize)]
+pub struct ShutdownRequest(EmptyResponse);
 
 impl CliDisplay for ShutdownRequest {
     fn json(&self) -> Value {
         json!(r#"{"success": true}"#)
     }
 
-    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
-        Box::new("Shutdown request sent 🚀")
+    fn stdout(&self, _: CliDisplayArg) -> CliResult {
+        CliResult::success(Box::new("Extinction en cours..."))
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        todo!()
     }
 }
 
@@ -182,7 +190,19 @@ impl CliDisplay for GetUpdateStatusResponse {
         json!(self.result)
     }
 
-    fn stdout(&self, _: CliDisplayArg) -> Box<dyn Display> {
-        Box::new("Update status 🚀")
+    fn stdout(&self, _: CliDisplayArg) -> CliResult {
+        match &self.result {
+            Some(result) => CliResult::success(Box::new(match result.state {
+                SystemUpdateStatusState::UpToDate => "Système à jour ✔",
+                SystemUpdateStatusState::Error => "Erreur pendant la mise à jour ❌",
+                SystemUpdateStatusState::Initializing => "Initialisation de la mise à jour",
+                SystemUpdateStatusState::Upgrading => "Mise à jour en cours",
+            })),
+            None => CliResult::error(Box::new("Pas de données disponibles pour le moment"))
+        }
+    }
+
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        todo!()
     }
 }

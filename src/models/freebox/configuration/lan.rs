@@ -1,12 +1,14 @@
 use std::fmt;
 use std::fmt::{Display, Formatter};
+use chrono::Utc;
 use clap::ValueEnum;
 use comfy_table::presets::UTF8_FULL;
 use comfy_table::{Attribute, Cell, ContentArrangement, Table};
 use crate::app::{ResponseResult, SuccessResponse};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
-use crate::terminal::{CliDisplay, CliDisplayArg};
+use serde_with::{serde_as, TimestampSeconds};
+use crate::terminal::{CliDisplay, CliDisplayArg, CliResult};
 
 #[derive(Debug, Clone, Deserialize)]
 pub enum LanConfigError {
@@ -73,6 +75,7 @@ pub struct LanCount {
     pub host_count: i32,
 }
 
+#[serde_as]
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct LanHost {
     pub id: String,
@@ -83,10 +86,13 @@ pub struct LanHost {
     pub vendor_name: String,
     pub persistent: bool,
     pub reachable: bool,
-    pub last_time_reachable: i32,
+    #[serde_as(as = "TimestampSeconds<i64>")]
+    pub last_time_reachable: chrono::DateTime<Utc>,
     pub active: bool,
-    pub last_activity: i32,
-    pub first_activity: i32,
+    #[serde_as(as = "TimestampSeconds<i64>")]
+    pub last_activity: chrono::DateTime<Utc>,
+    #[serde_as(as = "TimestampSeconds<i64>")]
+    pub first_activity: chrono::DateTime<Utc>,
     pub names: Option<Vec<LanHostName>>,
     pub l3connectivities: Vec<LanHostL3Connectivity>,
     pub network_control: Option<LanHostNetworkControl>,
@@ -97,7 +103,7 @@ impl CliDisplay for LanHost {
         json!(self)
     }
 
-    fn stdout(&self, _arg: crate::terminal::CliDisplayArg) -> Box<dyn Display> {
+    fn stdout(&self, _arg: CliDisplayArg) -> CliResult {
         let mut table = Table::new();
         table.load_preset(UTF8_FULL)
             .set_content_arrangement(ContentArrangement::Dynamic)
@@ -112,8 +118,23 @@ impl CliDisplay for LanHost {
             Cell::new(self.host_type.to_string()),
             Cell::new(if self.active { "Active" } else { "Inactive" })
         ]);
+        CliResult::success(Box::new(table))
+    }
 
-        Box::new(table)
+    fn raw(&self, _: CliDisplayArg) -> CliResult {
+        let mut table = tabular::Table::new("{:<} {:<}");
+        table.add_row(tabular::row!["ID", self.id.clone()]);
+        table.add_row(tabular::row!["Nom", self.primary_name.clone()]);
+        table.add_row(tabular::row!["Type", self.host_type.to_string()]);
+        table.add_row(tabular::row!["Nom du constructeur", self.vendor_name.clone()]);
+        table.add_row(tabular::row!["Actif", self.active]);
+        table.add_row(tabular::row!["Dernière activité", self.last_activity]);
+        table.add_row(tabular::row!["Première activité", self.first_activity]);
+        table.add_row(tabular::row!["Atteignable", self.reachable]);
+        table.add_row(tabular::row!["Dernière fois atteignable", self.last_time_reachable]);
+        table.add_row(tabular::row!["Nom manuel", self.primary_name_manual]);
+        table.add_row(tabular::row!["Persistant", self.persistent]);
+        CliResult::success(Box::new(table))
     }
 }
 
@@ -282,8 +303,18 @@ impl CliDisplay for LanHostResponse {
         json!(self.result)
     }
 
-    fn stdout(&self, arg: CliDisplayArg) -> Box<dyn Display> {
-        self.result.as_ref().unwrap().stdout(arg)
+    fn stdout(&self, arg: CliDisplayArg) -> CliResult {
+        match &self.result {
+            Some(a) => a.stdout(arg),
+            None => CliResult::error(Box::new("No data"))
+        }
+    }
+
+    fn raw(&self, arg: CliDisplayArg) -> CliResult {
+        match &self.result {
+            Some(a) => a.raw(arg),
+            None => CliResult::error(Box::new("No data"))
+        }
     }
 }
 

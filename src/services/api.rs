@@ -13,6 +13,9 @@ use crate::models::freebox::configuration::lan::{GetLanResponse, ListLanCountRes
 use crate::models::freebox::configuration::lcd::{LcdInfoResponse, LcdUpdateBody};
 use crate::models::freebox::configuration::port_forwarding::{GetPortForwardingResponse, ListPortForwardingResponse};
 use crate::models::freebox::configuration::system::{GetSystemInfoRequest, GetUpdateStatusResponse, RebootRequest, ShutdownRequest};
+use crate::models::freebox::language::{GetLanguageSupportResponse, LanguageSupportUpdateBody, UpdateLanguageSupportResponse};
+use crate::models::freebox::wifi::access_point::{GetWifiAllowedCombResponse, GetWifiApResponse, GetWifiStationsResponse, ListWifiApChannelSurveyResponse, ListWifiApResponse, ListWifiStationsResponse, RestartWifiApResponse, WifiApBody, WifiApCalls};
+use crate::models::freebox::wifi::bss::{GetWifiBss, ListWifiBss, WifiBssCalls};
 use crate::models::freebox::wifi::guest::{GetWifiCustomKey, ListWifiCustomKeys, WifiCustomKeyBody, WifiGuestCalls};
 use crate::models::freebox::wifi::mac_filter::{DeleteWifiMacFilter, ListWifiMacFilter, WifiMacFilter, WifiMacFilterBody, WifiMacFilterCalls, WifiMacFilterCreate};
 use crate::models::freebox::wifi::planning::{WifiPlanning, WifiPlanningBody, WifiPlanningCalls};
@@ -35,6 +38,8 @@ pub trait SystemCalls<T: HttpClient> {
     async fn get_system_info(&self, client: &T, session: &str) -> Result<GetSystemInfoRequest, T::Error>;
     async fn reboot(&self, client: &T, session: &str) -> Result<RebootRequest, T::Error>;
     async fn shutdown(&self, client: &T, session: &str) -> Result<ShutdownRequest, T::Error>;
+    async fn get_language(&self, client: &T, session: &str) -> Result<GetLanguageSupportResponse, T::Error>;
+    async fn set_language(&self, client: &T, session: &str, body: LanguageSupportUpdateBody) -> Result<UpdateLanguageSupportResponse, T::Error>;
 }
 
 pub trait LcdCalls<T: HttpClient> {
@@ -92,6 +97,7 @@ where
     async fn get_update_status(&self, client: &T, session_token: &str) -> Result<GetUpdateStatusResponse, T::Error> {
         client.get("/update/", auth_header(session_token)).await
     }
+
 }
 
 impl<T> LoginCalls<T> for FreeboxOSApi
@@ -133,6 +139,15 @@ where
     async fn shutdown(&self, client: &T, session_token: &str) -> Result<ShutdownRequest, T::Error> {
         client.post("/system/shutdown/", Some(()), auth_header(session_token)).await
     }
+
+    async fn get_language(&self, client: &T, session: &str) -> Result<GetLanguageSupportResponse, T::Error> {
+        client.get("/lang/", auth_header(session)).await
+    }
+
+    async fn set_language(&self, client: &T, session: &str, body: LanguageSupportUpdateBody) -> Result<UpdateLanguageSupportResponse, T::Error> {
+        client.put("/lang/", Some(body), auth_header(session)).await
+    }
+
 }
 
 impl <T> LcdCalls<T> for FreeboxOSApi
@@ -143,8 +158,8 @@ where
         client.get("/lcd/config/", auth_header(session_token)).await
     }
 
-    async fn update_lcd_info(&self, client: &T, session_token: &str, body: LcdUpdateBody) -> Result<LcdInfoResponse, T::Error> {
-        client.put("/lcd/config/", Some(body), auth_header(session_token)).await
+    async fn update_lcd_info(&self, client: &T, session: &str, body: LcdUpdateBody) -> Result<LcdInfoResponse, T::Error> {
+        client.put("/lcd/config/", Some(body), auth_header(session)).await
     }
 }
 
@@ -301,5 +316,53 @@ impl<T> WifiPlanningCalls<T> for FreeboxOSApi where T: HttpClient {
 
     async fn update_wifi_planning(&self, client: &T, session_token: &str, body: WifiPlanningBody) -> Result<WifiPlanning, T::Error> {
         client.put("/wifi/planning/", Some(body), auth_header(session_token)).await
+    }
+}
+
+impl<T> WifiBssCalls<T> for FreeboxOSApi where T: HttpClient {
+    async fn list_wifi_bss(&self, client: &T, session_token: &str) -> Result<ListWifiBss, T::Error> {
+        client.get("/wifi/bss/", auth_header(session_token)).await
+    }
+
+    async fn get_wifi_bss(&self, client: &T, session_token: &str, bss: &str) -> Result<GetWifiBss, T::Error> {
+        client.get(format!("/wifi/bss/{}", bss).as_str(), auth_header(session_token)).await
+    }
+
+    async fn update_wifi_bss(&self, client: &T, session_token: &str, bss: &str, body: WifiApBody) -> Result<GetWifiBss, T::Error> {
+        client.put(format!("/wifi/bss/{}", bss).as_str(), Some(body), auth_header(session_token)).await
+    }
+}
+
+impl<T> WifiApCalls<T> for FreeboxOSApi where T: HttpClient {
+    async fn list_wifi_access_points(&self, client: &T, session: &str) -> Result<ListWifiApResponse, T::Error> {
+        client.get("/wifi/ap/", auth_header(session)).await
+    }
+
+    async fn get_wifi_access_point(&self, client: &T, session: &str, ap_id: &str) -> Result<GetWifiApResponse, T::Error> {
+        client.get(format!("/wifi/ap/{}", ap_id).as_str(), auth_header(session)).await
+    }
+
+    async fn update_wifi_access_point(&self, client: &T, session: &str, ap_id: &str, body: WifiApBody) -> Result<GetWifiApResponse, T::Error> {
+        client.put(format!("/wifi/ap/{}", ap_id).as_str(), Some(body), auth_header(session)).await
+    }
+
+    async fn get_wifi_access_point_allowed_channels(&self, client: &T, session: &str, ap_id: &str) -> Result<GetWifiAllowedCombResponse, T::Error> {
+        client.get(format!("/wifi/ap/{}/allowed_channel_comb", ap_id).as_str(), auth_header(session)).await
+    }
+
+    async fn list_wifi_access_point_stations(&self, client: &T, session: &str, ap_id: &str) -> Result<ListWifiStationsResponse, T::Error> {
+        client.get(format!("/wifi/ap/{}/stations", ap_id).as_str(), auth_header(session)).await
+    }
+
+    async fn get_wifi_access_point_station(&self, client: &T, session: &str, ap_id: &str, station_mac: &str) -> Result<GetWifiStationsResponse, T::Error> {
+        client.get(format!("/wifi/ap/{}/stations/{}", ap_id, station_mac).as_str(), auth_header(session)).await
+    }
+
+    async fn get_wifi_access_point_channel_survey_history(&self, client: &T, session: &str, ap_id: &str, timestamp: i32) -> Result<ListWifiApChannelSurveyResponse, T::Error> {
+        client.get(format!("/wifi/ap/{}/channel_survey_history/{}", ap_id, timestamp).as_str(), auth_header(session)).await
+    }
+
+    async fn restart_wifi_access_point(&self, client: &T, session: &str, ap_id: &str) -> Result<RestartWifiApResponse, T::Error> {
+        client.post(format!("/wifi/ap/{}/restart", ap_id).as_str(), Some(()), auth_header(session)).await
     }
 }
