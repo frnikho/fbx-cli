@@ -1,7 +1,7 @@
 use crate::app::ResponseResult;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Debug, Clone, Deserialize)]
 pub struct PortForwardingConfig {
     pub id: i32,
     pub enabled: bool,
@@ -14,6 +14,29 @@ pub struct PortForwardingConfig {
     //TODO: pub host: LanHost,
     pub src_ip: String,
     pub comment: String,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub struct IncomingPortConfig {
+
+}
+
+#[derive(Debug, Clone, Deserialize)]
+pub enum IncomingPortConfigId {
+    #[serde(rename = "http")]
+    Http,
+    #[serde(rename = "https")]
+    Https,
+    #[serde(rename = "bittorrent-main")]
+    BittorrentMain,
+    BittorrentDht,
+    OpenVpnRouted,
+    OpenVpnBridge,
+    IpsecIke,
+    IpsecNat,
+    Pptp,
+    Ftp,
+    FtpPasv,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

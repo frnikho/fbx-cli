@@ -2,6 +2,11 @@ use hmac::{Hmac, Mac};
 use serde::{Deserialize, Serialize};
 use sha1::Sha1;
 use std::str::FromStr;
+use crate::app::{ResponseResult, SuccessResponse};
+
+const APP_ID: &str = "dev.nikho.fbxcli";
+const APP_NAME: &str = "fbx-cli";
+const APP_VERSION: &str = "1.0.0";
 
 #[derive(Serialize, Debug, Clone)]
 pub struct AuthTokenRequest {
@@ -14,9 +19,20 @@ pub struct AuthTokenRequest {
 impl Default for AuthTokenRequest {
     fn default() -> Self {
         AuthTokenRequest {
-            app_id: "dev.nikho.fbxcli".to_string(),
-            app_name: "fbx-cli".to_string(),
-            app_version: "1.0.0".to_string(),
+            app_id: APP_ID.to_string(),
+            app_name: APP_NAME.to_string(),
+            app_version: APP_VERSION.to_string(),
+            device_name: format!("{} - {}", whoami::username(), whoami::distro()),
+        }
+    }
+}
+
+impl AuthTokenRequest {
+    pub fn new(app_id: &Option<String>, app_version: &Option<String>) -> Self {
+        AuthTokenRequest {
+            app_id: app_id.clone().unwrap_or(APP_ID.to_string()),
+            app_name: APP_NAME.to_string(),
+            app_version: app_version.clone().unwrap_or(APP_VERSION.to_string()),
             device_name: format!("{} - {}", whoami::username(), whoami::distro()),
         }
     }
@@ -26,6 +42,12 @@ impl Default for AuthTokenRequest {
 pub struct AuthTokenResult {
     pub app_token: String,
     pub track_id: i32,
+}
+
+impl AuthTokenResult {
+    pub fn new(app_token: String, track_id: i32) -> Self {
+        AuthTokenResult { app_token, track_id }
+    }
 }
 
 #[derive(Deserialize, Debug, Clone)]
@@ -54,11 +76,7 @@ pub struct AuthTrackAuthorizationProgressResult {
     pub challenge: String,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthTrackAuthorizationProgressResponse {
-    pub success: bool,
-    pub result: AuthTrackAuthorizationProgressResult,
-}
+pub type AuthTrackAuthorizationProgressResponse = ResponseResult<AuthTrackAuthorizationProgressResult>;
 
 // Session
 
@@ -70,11 +88,10 @@ pub struct AuthSessionStartRequest {
 }
 
 impl AuthSessionStartRequest {
-    pub fn new(app_token: String, challenge: String) -> Option<Self> {
-        let auth_token = AuthTokenRequest::default();
+    pub fn new(token: AuthTokenRequest, app_token: String, challenge: String) -> Option<Self> {
         Some(AuthSessionStartRequest {
-            app_id: auth_token.app_id,
-            app_version: auth_token.app_version,
+            app_id: token.app_id,
+            app_version: token.app_version,
             password: Self::generate_password(app_token, challenge)?,
         })
     }
@@ -98,8 +115,10 @@ impl AuthSessionStartRequest {
                 .finalize()
                 .into_bytes()
                 .iter()
-                .map(|b| format!("{:02x}", b))
-                .collect::<String>(),
+                .fold(String::new(), |mut acc, b| {
+                    acc.push_str(&format!("{:02x}", b));
+                    acc
+                }),
         )
     }
 }
@@ -135,22 +154,10 @@ pub struct AuthSessionStartResponse {
 pub struct AuthLoginResult {
     pub logged_in: bool,
     pub challenge: Option<String>,
-    pub password_salt: String,
-    pub password_set: bool,
 }
 
-#[derive(Deserialize, Debug, Clone)]
-pub struct AuthLoginResponse {
-    pub success: bool,
-    pub result: AuthLoginResult,
-}
-
-#[derive(Clone, Deserialize, Debug)]
-pub struct AuthLogoutResponse {
-    pub success: bool,
-}
-
-//
+pub type AuthLoginResponse = ResponseResult<AuthLoginResult>;
+pub type AuthLogoutResponse = SuccessResponse;
 
 #[derive(Clone, Deserialize, Debug, PartialEq)]
 pub struct AuthorizationError {
